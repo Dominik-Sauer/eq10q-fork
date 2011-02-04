@@ -1,1 +1,0 @@
-svn co https://eq10q.svn.sourceforge.net/svnroot/eq10q eq10q  
