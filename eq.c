@@ -294,7 +294,7 @@ static LV2_Handle instantiateEQ(const LV2_Descriptor *descriptor, double s_rate,
 
 static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
 {
-  
+
   EQ *plugin_data = (EQ *)instance;
  
   //Get values of control ports
@@ -407,6 +407,8 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
     }
   }
   
+  int should_send_fft = 0;
+
   //Compute the filter
   for (pos = 0; pos < sample_count; pos++) 
   {       
@@ -467,21 +469,20 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
               img = 0.0;
             }
             plugin_data->fft_out[ffti] = 0.5*(plugin_data->fft_normalization*(real*real + img*img) + plugin_data->fft_out2[ffti]);
-          }
-          
+// 			if( 20.0f * log10( plugin_data->fft_out2[ffti] ) > -10.0f ){
+// 				printf(
+// 					"|f:%05.0f:%4.10f",
+// 					ffti*(plugin_data->sampleRate/FFT_N),
+// 					20.0f * log10( plugin_data->fft_out2[ffti] )
+// 				);
+// 			}
+		  }
+//           printf("|\n");
           plugin_data->fft_ix = 0;      
           
 
           //Send FFT data vector
-          LV2_Atom_Forge_Frame frameFft;       
-          lv2_atom_forge_frame_time(&plugin_data->forge, 0);
-          lv2_atom_forge_object( &plugin_data->forge, &frameFft, 0, plugin_data->uris.atom_fft_data_event); 
-          lv2_atom_forge_key(&plugin_data->forge, plugin_data->uris.atom_fft_data_key);
-          lv2_atom_forge_vector(&plugin_data->forge, sizeof(double), plugin_data->uris.atom_Double, (FFT_N/2), plugin_data->fft_out);
-          lv2_atom_forge_pop(&plugin_data->forge, &frameFft);
-          
-          // Close off sequence
-          lv2_atom_forge_pop(&plugin_data->forge, &plugin_data->notify_frame);
+		  should_send_fft = 1;
         }
         
         if(plugin_data->fft_ix2 == FFT_N)
@@ -505,7 +506,7 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
             }
             plugin_data->fft_out2[ffti] = plugin_data->fft_normalization*(real*real + img*img);
           }
-          
+
           plugin_data->fft_ix2 = 0;                
         }
       }
@@ -622,6 +623,19 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
     plugin_data->fOutput[1][pos] = (float)sampleR;
     #endif
   }
+
+	if (should_send_fft) {
+		LV2_Atom_Forge_Frame frameFft;
+		lv2_atom_forge_frame_time(&plugin_data->forge, 0);
+		lv2_atom_forge_object( &plugin_data->forge, &frameFft, 0, plugin_data->uris.atom_fft_data_event);
+		lv2_atom_forge_key(&plugin_data->forge, plugin_data->uris.atom_fft_data_key);
+		lv2_atom_forge_vector(&plugin_data->forge, sizeof(double), plugin_data->uris.atom_Double, (FFT_N/2), plugin_data->fft_out);
+		lv2_atom_forge_pop(&plugin_data->forge, &frameFft);
+
+		// Close off sequence
+		lv2_atom_forge_pop(&plugin_data->forge, &plugin_data->notify_frame);
+	}
+
   
   //Update VU ports
   *(plugin_data->fVuIn[0]) = ComputeVu(plugin_data->InputVu[0], sample_count);
