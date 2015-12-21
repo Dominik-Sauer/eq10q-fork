@@ -89,62 +89,57 @@ void FilterClean(Filter *f);
 //Clean buffers
 void flushBuffers(Buffers *buf);
 
+static inline void interpolate_freq( Filter* filter, float fFreq ) {
+    float err = fFreq / filter->freq;
+
+    filter->freq
+        = ( err > filter->freqInter )   ? filter->freq * filter->freqInter
+        : ( err < 1/filter->freqInter ) ? filter->freq / filter->freqInter
+                                        : fFreq;
+
+    return;
+}
+
+static inline void interpolate_gain( Filter* filter, float fGain ) {
+    filter->gain = fGain;
+    return;
+
+    float err = fGain - filter->gain;
+
+    filter->gain
+        = ( err > filter->gainInter )   ? filter->gain + filter->gainInter
+        : ( err < - filter->gainInter ) ? filter->gain - filter->gainInter
+                                        : fGain;
+
+    return;
+}
+
+static inline void interpolate_q( Filter* filter, float fQ ) {
+    float err = fQ / filter->q;
+
+    filter->q
+        = ( err > filter->QInter )      ? filter->q * filter->QInter
+        : ( err < 1/filter->QInter )    ? filter->q / filter->QInter
+                                        : fQ;
+
+    return;
+}
+
 //Compute filter coeficients
 static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ, int iType, float iEnabled) //p2 = GAIN p3 = Q
 {   
     double alpha, A, b0, b1, b2, a0, a1, a2, b1_0, b1_1, b1_2, a1_0, a1_1, a1_2;
     alpha = A = b0 = b1 = b2 = a0 = a1 = a2 = b1_0 = b1_1 = b1_2 = a1_0 = a1_1 = a1_2 = 1.0;
     filter->filter_order = 0;
-    
-    //Freq Interpolation    
-    float Err = fFreq/filter->freq;
-    if(Err > filter->freqInter)
-    {
-      filter->freq *= filter->freqInter;
-    }
-    else if(Err < 1/filter->freqInter)
-    {
-      filter->freq /= filter->freqInter;
-    }
-    else
-    {
-      filter->freq = fFreq;
-    }
-    
-    //Gain Interpolation
-    Err = fGain - filter->gain;
-    if(Err > filter->gainInter)
-    {
-      filter->gain += filter->gainInter;
-    }
-    else if(Err < -filter->gainInter)
-    {
-      filter->gain -= filter->gainInter;
-    }
-    else
-    {
-      filter->gain = fGain;
-    }
-    
-    //Q Interpolation
-    Err = fQ/filter->q;
-    if(Err > filter->QInter)
-    {
-      filter->q *= filter->QInter;
-    }
-    else if(Err < 1/filter->QInter)
-    {
-      filter->q /= filter->QInter;
-    }
-    else
-    {
-      filter->q = fQ;
-    }
-    
+
+    interpolate_freq( filter, fFreq );
+    interpolate_gain( filter, fGain );
+    interpolate_q( filter, fQ );
+
     double w0=2*PI*(filter->freq/filter->fs);
     filter->enable = iEnabled;
     filter->iType = iType;
-    
+
     switch(iType){
 
       case F_HPF_ORDER_1:
