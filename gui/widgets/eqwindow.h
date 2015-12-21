@@ -64,7 +64,7 @@ using namespace sigc;
 class EqMainWindow : public MainWidget
 {
   public:
-    EqMainWindow(int iAudioChannels, int iNumBands, const char *uri, const char *bundlePath, const LV2_Feature *const *features);
+    EqMainWindow(int iNumBands, const char *uri, const char *bundlePath, const LV2_Feature *const *features);
     virtual ~EqMainWindow();   
     void request_sample_rate();
         
@@ -72,7 +72,7 @@ class EqMainWindow : public MainWidget
     void gui_port_event(LV2UI_Handle ui, uint32_t port, uint32_t buffer_size, uint32_t format, const void * buffer)
     {     
       //Atom event from DSP
-      if((int)port == (PORT_OFFSET + 2*m_iNumOfChannels + 5*m_iNumOfBands + 2*m_iNumOfChannels))
+      if((int)port == (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + 2*m_iNumOfChannels))
       {
          
           const LV2_Atom* atom = (const LV2_Atom*)buffer;               
@@ -189,65 +189,65 @@ class EqMainWindow : public MainWidget
 
 	  default:
 	    //Connect BandGain ports
-	    if((int)port >= (PORT_OFFSET + 2*m_iNumOfChannels) && (int)port < (PORT_OFFSET + 2*m_iNumOfChannels + m_iNumOfBands))
+	    if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + m_iNumOfBands))
 	    {
-	      ///m_BandCtlArray[(int)port - PORT_OFFSET - 2*m_iNumOfChannels]->setGain(data);
-	      ///m_Bode->setBandGain((int)port - PORT_OFFSET - 2*m_iNumOfChannels, data);
-	      m_CurParams->setBandGain((int)port - PORT_OFFSET - 2*m_iNumOfChannels, data);
+	      ///m_BandCtlArray[(int)port - INPUT_PORT - 2*m_iNumOfChannels]->setGain(data);
+	      ///m_Bode->setBandGain((int)port - INPUT_PORT - 2*m_iNumOfChannels, data);
+	      m_CurParams->setBandGain((int)port - INPUT_PORT - 2*m_iNumOfChannels, data);
 	      m_port_event_Curve = true; //Marck port even boolean
-	      m_port_event_Curve_Gain[(int)port - PORT_OFFSET - 2*m_iNumOfChannels] = true;
+	      m_port_event_Curve_Gain[(int)port - INPUT_PORT - 2*m_iNumOfChannels] = true;
 	      #ifdef PRINT_DEBUG_INFO
 		std::cout<<"\t-- Band Gain"<<std::endl;
 	      #endif  
 	    }
 
 	    //Connect BandFreq ports
-	    else if((int)port >= (PORT_OFFSET + 2*m_iNumOfChannels + m_iNumOfBands) && (int)port < (PORT_OFFSET + 2*m_iNumOfChannels + 2*m_iNumOfBands))
+	    else if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels + m_iNumOfBands) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + 2*m_iNumOfBands))
 	    {
-	      ///m_BandCtlArray[(int)port - PORT_OFFSET - 2*m_iNumOfChannels - m_iNumOfBands]->setFreq(data);
-	      ///m_Bode->setBandFreq((int)port - PORT_OFFSET - 2*m_iNumOfChannels - m_iNumOfBands, data);
-	      m_CurParams->setBandFreq((int)port - PORT_OFFSET - 2*m_iNumOfChannels - m_iNumOfBands, data);
+	      ///m_BandCtlArray[(int)port - INPUT_PORT - 2*m_iNumOfChannels - m_iNumOfBands]->setFreq(data);
+	      ///m_Bode->setBandFreq((int)port - INPUT_PORT - 2*m_iNumOfChannels - m_iNumOfBands, data);
+	      m_CurParams->setBandFreq((int)port - INPUT_PORT - 2*m_iNumOfChannels - m_iNumOfBands, data);
 	      m_port_event_Curve = true; //Marck port even boolean
-	      m_port_event_Curve_Freq[(int)port - PORT_OFFSET - 2*m_iNumOfChannels - m_iNumOfBands] = true;
+	      m_port_event_Curve_Freq[(int)port - INPUT_PORT - 2*m_iNumOfChannels - m_iNumOfBands] = true;
 	      #ifdef PRINT_DEBUG_INFO
 		std::cout<<"\t-- Band Freq"<<std::endl;
 	      #endif  
 	    }
 
 	    //Connect BandParam ports
-	    else if((int)port >= (PORT_OFFSET + 2*m_iNumOfChannels + 2*m_iNumOfBands) && (int)port < (PORT_OFFSET + 2*m_iNumOfChannels + 3*m_iNumOfBands))
+	    else if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels + 2*m_iNumOfBands) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + 3*m_iNumOfBands))
 	    {
-	      ///m_BandCtlArray[(int)port - PORT_OFFSET - 2*m_iNumOfChannels - 2*m_iNumOfBands]->setQ(data);
-	      ///m_Bode->setBandQ((int)port - PORT_OFFSET - 2*m_iNumOfChannels - 2*m_iNumOfBands, data);
-	      m_CurParams->setBandQ((int)port - PORT_OFFSET - 2*m_iNumOfChannels - 2*m_iNumOfBands, data);
+	      ///m_BandCtlArray[(int)port - INPUT_PORT - 2*m_iNumOfChannels - 2*m_iNumOfBands]->setQ(data);
+	      ///m_Bode->setBandQ((int)port - INPUT_PORT - 2*m_iNumOfChannels - 2*m_iNumOfBands, data);
+	      m_CurParams->setBandQ((int)port - INPUT_PORT - 2*m_iNumOfChannels - 2*m_iNumOfBands, data);
 	      m_port_event_Curve = true; //Marck port even boolean
-	      m_port_event_Curve_Q[(int)port - PORT_OFFSET - 2*m_iNumOfChannels - 2*m_iNumOfBands] = true;
+	      m_port_event_Curve_Q[(int)port - INPUT_PORT - 2*m_iNumOfChannels - 2*m_iNumOfBands] = true;
 	      #ifdef PRINT_DEBUG_INFO
 		std::cout<<"\t-- Band Q"<<std::endl;
 	      #endif  
 	    }
 
 	    //Connect BandType ports
-	    else if((int)port >= (PORT_OFFSET + 2*m_iNumOfChannels + 3*m_iNumOfBands) && (int)port < (PORT_OFFSET + 2*m_iNumOfChannels + 4*m_iNumOfBands))
+	    else if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels + 3*m_iNumOfBands) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + 4*m_iNumOfBands))
 	    {
-	      ///m_BandCtlArray[(int)port - PORT_OFFSET - 2*m_iNumOfChannels - 3*m_iNumOfBands]->setFilterType(data);
-	      ///m_Bode->setBandType((int)port - PORT_OFFSET - 2*m_iNumOfChannels - 3*m_iNumOfBands, data);
-	      m_CurParams->setBandType((int)port - PORT_OFFSET - 2*m_iNumOfChannels - 3*m_iNumOfBands, ((int)data) & 0xFF);
+	      ///m_BandCtlArray[(int)port - INPUT_PORT - 2*m_iNumOfChannels - 3*m_iNumOfBands]->setFilterType(data);
+	      ///m_Bode->setBandType((int)port - INPUT_PORT - 2*m_iNumOfChannels - 3*m_iNumOfBands, data);
+	      m_CurParams->setBandType((int)port - INPUT_PORT - 2*m_iNumOfChannels - 3*m_iNumOfBands, ((int)data) & 0xFF);
 	      m_port_event_Curve = true; //Marck port even boolean
-	      m_port_event_Curve_Type[(int)port - PORT_OFFSET - 2*m_iNumOfChannels - 3*m_iNumOfBands] = true;
+	      m_port_event_Curve_Type[(int)port - INPUT_PORT - 2*m_iNumOfChannels - 3*m_iNumOfBands] = true;
 	      #ifdef PRINT_DEBUG_INFO
 		std::cout<<"\t-- Band Type"<<std::endl;
 	      #endif  
 	    }
 
 	    //Connect BandEnabled ports
-	    else if((int)port >= (PORT_OFFSET + 2*m_iNumOfChannels + 4*m_iNumOfBands) && (int)port < (PORT_OFFSET + 2*m_iNumOfChannels + 5*m_iNumOfBands))
+	    else if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels + 4*m_iNumOfBands) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands))
 	    {
-	      ///m_BandCtlArray[(int)port - PORT_OFFSET - 2*m_iNumOfChannels - 4*m_iNumOfBands]->setEnabled(data > 0.5);
-	      ///m_Bode->setBandEnable((int)port - PORT_OFFSET - 2*m_iNumOfChannels - 4*m_iNumOfBands, data > 0.5);
+	      ///m_BandCtlArray[(int)port - INPUT_PORT - 2*m_iNumOfChannels - 4*m_iNumOfBands]->setEnabled(data > 0.5);
+	      ///m_Bode->setBandEnable((int)port - INPUT_PORT - 2*m_iNumOfChannels - 4*m_iNumOfBands, data > 0.5);
 
               int iMidSide = (int)data >> 1;
-              const int sel_band = (int)port - PORT_OFFSET - 2*m_iNumOfChannels - 4*m_iNumOfBands;
+              const int sel_band = (int)port - INPUT_PORT - 2*m_iNumOfChannels - 4*m_iNumOfBands;
               switch(iMidSide)
               {
                 case 0: 
@@ -283,25 +283,25 @@ class EqMainWindow : public MainWidget
 	    }
 
 	    //Connect VuInput ports
-	    else if((int)port >= (PORT_OFFSET + 2*m_iNumOfChannels + 5*m_iNumOfBands) && (int)port < (PORT_OFFSET + 2*m_iNumOfChannels + 5*m_iNumOfBands + m_iNumOfChannels))
+	    else if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + m_iNumOfChannels))
 	    {
-              m_VuMeterIn->setValue((int)port - PORT_OFFSET - 2*m_iNumOfChannels - 5*m_iNumOfBands,data);
+              m_VuMeterIn->setValue((int)port - INPUT_PORT - 2*m_iNumOfChannels - 5*m_iNumOfBands,data);
 	      #ifdef PRINT_DEBUG_INFO
 		std::cout<<"\t-- Vu input"<<std::endl;
 	      #endif  
 	    }
 
 	    //Connect VuOutput ports
-	    else if((int)port >= (PORT_OFFSET + 2*m_iNumOfChannels + 5*m_iNumOfBands + m_iNumOfChannels) && (int)port < (PORT_OFFSET + 2*m_iNumOfChannels + 5*m_iNumOfBands + 2*m_iNumOfChannels))
+	    else if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + m_iNumOfChannels) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + 2*m_iNumOfChannels))
 	    {
-              m_VuMeterOut->setValue((int)port - PORT_OFFSET - 2*m_iNumOfChannels - 5*m_iNumOfBands - m_iNumOfChannels, data);
+              m_VuMeterOut->setValue((int)port - INPUT_PORT - 2*m_iNumOfChannels - 5*m_iNumOfBands - m_iNumOfChannels, data);
 	      #ifdef PRINT_DEBUG_INFO
 		std::cout<<"\t-- Vu output"<<std::endl;
 	      #endif  
 	    }
 	      
 	    //Connect Stereo Mode port
-            else if((int)port == (PORT_OFFSET + 2*m_iNumOfChannels + 5*m_iNumOfBands + 2*m_iNumOfChannels + 2))
+            else if((int)port == (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + 2*m_iNumOfChannels + 2))
             {
               setStereoMode( data > 0.5);
               #ifdef PRINT_DEBUG_INFO

@@ -7,8 +7,3 @@
 <https://github.com/Dominik-Sauer/eq10q-fork/fbdm>
   a lv2:Plugin;
   rdfs:seeAlso <fbdm.ttl>.
-
-<https://github.com/Dominik-Sauer/eq10q-fork/fbds>
-  a lv2:Plugin;
-  rdfs:seeAlso <fbds.ttl>.
-

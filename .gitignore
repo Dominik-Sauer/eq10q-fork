@@ -9,14 +9,10 @@ dsp/CMakeFiles/
 dsp/Makefile
 dsp/cmake_install.cmake
 fbdm.c
-fbds.c
 gui/CMakeFiles/
 gui/Makefile
 gui/cmake_install.cmake
-gui/compressor_ui.cpp
 gui/fbdm_ui.cpp
-gui/fbds_ui.cpp
-gui/guitester_cfg_.cpp
 gui/widgets/CMakeFiles/
 gui/widgets/Makefile
 gui/widgets/cmake_install.cmake

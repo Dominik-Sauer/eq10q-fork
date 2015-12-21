@@ -35,95 +35,78 @@
 #define TOP_OFFSET 24
 #define AUTO_REFRESH_TIMEOUT_MS 20
 
-VUWidget::VUWidget(int iChannels, float fMin, float fMax, std::string title, bool IsGainReduction, bool DrawThreshold) 
-  :m_iChannels(iChannels),
-  m_fMin(fMin),
+VUWidget::VUWidget(float fMin, float fMax, std::string title, bool IsGainReduction, bool DrawThreshold)
+  :m_fMin(fMin),
   m_fMax(fMax),
   m_bIsGainReduction(IsGainReduction),
   bMotionIsConnected(false),
-  m_fValues(new float[m_iChannels]),
-  m_fPeaks(new float[m_iChannels]),
-  m_iBuffCnt(new int[m_iChannels]),
   m_ThFaderValue(0.0),
   m_iThFaderPositon(0),
   m_bDrawThreshold(DrawThreshold),
-  m_start(new timeval[m_iChannels]),
-  m_end(new timeval[m_iChannels]),
   m_Title(title),
   m_redraw_fader(true),
   m_redraw_Vu(true)
 {
-  
-  for (int i = 0; i < m_iChannels; i++)
-  {
-    m_fValues[i] = -100.0;
-    m_fPeaks[i] = -100.0;
-    m_iBuffCnt[i] = 0;
-  }
-  
-  int widget_witdh;
-  if(m_bDrawThreshold)
-  {   
-    widget_witdh = MARGIN + TEXT_OFFSET +  (MARGIN + CHANNEL_WIDTH)* m_iChannels + MICROFADER_WIDTH/2 + MARGIN + 2;
-  }
-  else
-  {
-    widget_witdh = MARGIN + TEXT_OFFSET +  (MARGIN + CHANNEL_WIDTH)* m_iChannels;
-  }
-  set_size_request(widget_witdh, WIDGET_HEIGHT);
- 
-   
-  //Initialize peak time counters
-  for (int i = 0; i < m_iChannels; i++)
-  {
-    gettimeofday(&m_start[i], NULL);
-    gettimeofday(&m_end[i], NULL);
-  } 
+    m_fValue = m_fPeak = -100;
+    m_iBuffCnt = 0;
 
-  //The micro fader for threshold
-  add_events(Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::POINTER_MOTION_MASK | Gdk::SCROLL_MASK);
-  signal_button_press_event().connect(sigc::mem_fun(*this, &VUWidget::on_button_press_event),true);
-  signal_button_release_event().connect(sigc::mem_fun(*this, &VUWidget::on_button_release_event),true);
-  signal_scroll_event().connect(sigc::mem_fun(*this, &VUWidget::on_scrollwheel_event),true);
-  
-  Glib::signal_timeout().connect( sigc::mem_fun(*this, &VUWidget::on_timeout_redraw), AUTO_REFRESH_TIMEOUT_MS );
+    int widget_witdh;
+    if(m_bDrawThreshold)
+    {
+        widget_witdh
+            = MARGIN
+            + TEXT_OFFSET
+            + MARGIN
+            + CHANNEL_WIDTH
+            + MICROFADER_WIDTH/2
+            + MARGIN
+            + 2;
+    }
+    else
+    {
+        widget_witdh
+            = MARGIN
+            + TEXT_OFFSET
+            + MARGIN
+            + CHANNEL_WIDTH;
+    }
+    set_size_request(widget_witdh, WIDGET_HEIGHT);
+
+    gettimeofday(&m_start, NULL);
+    gettimeofday(&m_end, NULL);
+
+    //The micro fader for threshold
+    add_events(Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::POINTER_MOTION_MASK | Gdk::SCROLL_MASK);
+    signal_button_press_event().connect(sigc::mem_fun(*this, &VUWidget::on_button_press_event),true);
+    signal_button_release_event().connect(sigc::mem_fun(*this, &VUWidget::on_button_release_event),true);
+    signal_scroll_event().connect(sigc::mem_fun(*this, &VUWidget::on_scrollwheel_event),true);
+
+    Glib::signal_timeout().connect( sigc::mem_fun(*this, &VUWidget::on_timeout_redraw), AUTO_REFRESH_TIMEOUT_MS );
 }
 
-VUWidget::~VUWidget()
-{
-  delete [] m_fValues;
-  delete [] m_fPeaks;
-  delete [] m_start;
-  delete [] m_end;
-  delete [] m_iBuffCnt;
-}
-  
+VUWidget::~VUWidget() {}
+
 void VUWidget::setValue(int iChannel, float fValue)
 {   
   if (fValue > 0)
   {
-    if(m_iBuffCnt[iChannel] > 0)
+    if(m_iBuffCnt > 0)
     {
-       m_fValues[iChannel] = ((((double)m_iBuffCnt[iChannel])*m_fValues[iChannel]) +  20.0*log10(fValue))/((double)(m_iBuffCnt[iChannel] + 1));
+       m_fValue = ((((double)m_iBuffCnt)*m_fValue) +  20.0*log10(fValue))/((double)(m_iBuffCnt + 1));
     }
     else
     {
-      m_fValues[iChannel] = 20.0*log10(fValue);
+      m_fValue = 20.0*log10(fValue);
     }
-    m_iBuffCnt[iChannel]++;
+    m_iBuffCnt++;
   }
   else
   {
-     m_fValues[iChannel] = -100.0;
+     m_fValue = -100.0;
   }
    
   m_redraw_Vu = true;
 }
-
-void VUWidget::clearPeak(int iChannel)
-{
-  m_fPeaks[iChannel] = 0.0;
-} 
 
 double VUWidget::dB2Pixels(double dB_in)
 {
@@ -302,7 +285,7 @@ void VUWidget::redraw_background()
     
     cr->move_to(MARGIN + TEXT_OFFSET - 3, TOP_OFFSET/2);//4 is to get the text centered in VU
     pangoLayout->set_text(m_Title.c_str());
-    pangoLayout->set_width(Pango::SCALE * (CHANNEL_WIDTH * m_iChannels + (m_iChannels - 1)*MARGIN));
+    pangoLayout->set_width(Pango::SCALE * ( CHANNEL_WIDTH + MARGIN ) );
     pangoLayout->set_alignment(Pango::ALIGN_CENTER);
     pangoLayout->show_in_cairo_context(cr);
     cr->stroke();  
@@ -323,22 +306,20 @@ void VUWidget::redraw_background()
     //Draw VU rectangle
     double radius = height / 100.0;
     double degrees = M_PI / 180.0;
-    for(int i = 0; i < m_iChannels; i++)
-    {
-      cr->save();         
-      cr->begin_new_sub_path();
-      cr->arc (MARGIN + TEXT_OFFSET + CHANNEL_WIDTH + i*(MARGIN + CHANNEL_WIDTH + 0.5) - radius, MARGIN + TOP_OFFSET - 4 + radius, radius, -90 * degrees, 0 * degrees);
-      cr->arc (MARGIN + TEXT_OFFSET + CHANNEL_WIDTH + i*(MARGIN + CHANNEL_WIDTH + 0.5) - radius, height - 1 - MARGIN - radius, radius, 0 * degrees, 90 * degrees);
-      cr->arc (MARGIN + TEXT_OFFSET + i*(MARGIN + CHANNEL_WIDTH + 0.5) + radius, height - 1 - MARGIN - radius, radius, 90 * degrees, 180 * degrees);
-      cr->arc (MARGIN + TEXT_OFFSET + i*(MARGIN + CHANNEL_WIDTH + 0.5) + radius, MARGIN + TOP_OFFSET - 4 + radius, radius, 180 * degrees, 270 * degrees);
-      cr->close_path();
-      cr->set_source_rgb(0.15, 0.15, 0.15);
-      cr->fill_preserve();
-      cr->set_line_width(1.0);
-      cr->set_source_rgb(0.5, 0.5, 0.5);
-      cr->stroke();
-      cr->restore();
-    }
+
+    cr->save();
+    cr->begin_new_sub_path();
+    cr->arc (MARGIN + TEXT_OFFSET + CHANNEL_WIDTH + MARGIN + CHANNEL_WIDTH + 0.5 - radius, MARGIN + TOP_OFFSET - 4 + radius, radius, -90 * degrees, 0 * degrees);
+    cr->arc (MARGIN + TEXT_OFFSET + CHANNEL_WIDTH + MARGIN + CHANNEL_WIDTH + 0.5 - radius, height - 1 - MARGIN - radius, radius, 0 * degrees, 90 * degrees);
+    cr->arc (MARGIN + TEXT_OFFSET + MARGIN + CHANNEL_WIDTH + 0.5 + radius, height - 1 - MARGIN - radius, radius, 90 * degrees, 180 * degrees);
+    cr->arc (MARGIN + TEXT_OFFSET + MARGIN + CHANNEL_WIDTH + 0.5 + radius, MARGIN + TOP_OFFSET - 4 + radius, radius, 180 * degrees, 270 * degrees);
+    cr->close_path();
+    cr->set_source_rgb(0.15, 0.15, 0.15);
+    cr->fill_preserve();
+    cr->set_line_width(1.0);
+    cr->set_source_rgb(0.5, 0.5, 0.5);
+    cr->stroke();
+    cr->restore();
   }
 }
 
@@ -356,7 +337,7 @@ void VUWidget::redraw_foreground()
     for(float fdb = m_fMin; fdb <= m_fMax; fdb = fdb + TEXT_DB_SEPARATION)
     {
       cr->move_to(MARGIN + TEXT_OFFSET - 2, round(dB2Pixels(fdb)) + 0.5);
-      cr->line_to(MARGIN + TEXT_OFFSET + CHANNEL_WIDTH + (m_iChannels - 1 ) * (CHANNEL_WIDTH + MARGIN ) + 2, round(dB2Pixels(fdb)) + 0.5);
+      cr->line_to(MARGIN + TEXT_OFFSET + CHANNEL_WIDTH + CHANNEL_WIDTH + MARGIN + 2, round(dB2Pixels(fdb)) + 0.5);
       cr->stroke();     
     }
     cr->restore();
@@ -448,81 +429,97 @@ void VUWidget::redraw_faderwidget()
 
 void VUWidget::redraw_vuwidget()
 {
-  if(m_vu_surface_ptr)
-  {
-    //Create cairo context using the buffer surface
-    Cairo::RefPtr<Cairo::Context> cr = Cairo::Context::create(m_vu_surface_ptr);  
-  
-    //Clear current context  
-    cr->save();
-    cr->set_operator(Cairo::OPERATOR_CLEAR);
-    cr->paint();
-    cr->restore();
-   //Draw the VU
-    Cairo::RefPtr<Cairo::LinearGradient> bkg_gradient_ptr;
-    for(int i = 0; i < m_iChannels; i++)
+    if(m_vu_surface_ptr)
     {
-      //Reset mean buffer
-      m_iBuffCnt[i] = 0;
-      long mtime, seconds, useconds;
-      gettimeofday(&m_end[i], NULL);
-      
-      seconds  = m_end[i].tv_sec  - m_start[i].tv_sec;
-      useconds = m_end[i].tv_usec - m_start[i].tv_usec;
-      mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
-      
-      //Clip max
-      m_fValues[i] =  m_fValues[i] > m_fMax ? m_fMax :  m_fValues[i];
-  
-      if (m_fValues[i] >= m_fPeaks[i])
-      {
-        m_fPeaks[i] = m_fValues[i];
-        gettimeofday(&m_start[i] , NULL);
-      }
-    
-      else if (mtime > PEAK_CLEAR_TIMEOUT)
-      {
-        m_fPeaks[i] = -100.0;
-      }
-      
-      
-      cr->save();
-      cr->set_line_width(CHANNEL_WIDTH - 4);
-      cr->set_line_cap(Cairo::LINE_CAP_ROUND);
-      bkg_gradient_ptr = Cairo::LinearGradient::create(MARGIN + TEXT_OFFSET + CHANNEL_WIDTH/2.0 + i*(MARGIN + CHANNEL_WIDTH + 0.5), dB2Pixels(m_fMin), MARGIN + TEXT_OFFSET + CHANNEL_WIDTH/2.0 + i*(MARGIN + CHANNEL_WIDTH + 0.5), dB2Pixels(m_fMax));   
-      if(m_bIsGainReduction)
-      {
-        bkg_gradient_ptr->add_color_stop_rgba (0.0, 1.0, 0.5, 0.0, 0.0); 
-        bkg_gradient_ptr->add_color_stop_rgba (0.01, 1.0, 0.5, 0.0, 1.0); 
-        bkg_gradient_ptr->add_color_stop_rgba (1.0, 1.0, 0.0, 0.0, 1.0); 
-      }
-      else
-      {
-        bkg_gradient_ptr->add_color_stop_rgba (0.0, 0.0, 1.0, 0.0, 0.0); 
-        bkg_gradient_ptr->add_color_stop_rgba (0.01, 0.0, 1.0, 0.0, 1.0); 
-        bkg_gradient_ptr->add_color_stop_rgba (0.5, 1.0, 1.0, 0.0, 1.0); 
-        bkg_gradient_ptr->add_color_stop_rgba (1.0, 1.0, 0.0, 0.0, 1.0); 
-      }
-      cr->set_source(bkg_gradient_ptr);
-            
-      //The VU
-      if(m_fValues[i] >= m_fMin)
-      {
-        cr->move_to(MARGIN + TEXT_OFFSET + CHANNEL_WIDTH/2.0 + i*(MARGIN + CHANNEL_WIDTH + 0.5), dB2Pixels(m_fMin));
-        cr->line_to(MARGIN + TEXT_OFFSET + CHANNEL_WIDTH/2.0 + i*(MARGIN + CHANNEL_WIDTH + 0.5), dB2Pixels(m_fValues[i]));
-        cr->stroke();
-      }
-      
-      //The peak
-      if(m_fPeaks[i] >= m_fMin)
-      {
-        cr->move_to(MARGIN + TEXT_OFFSET + CHANNEL_WIDTH/2.0 + i*(MARGIN + CHANNEL_WIDTH + 0.5), dB2Pixels(m_fPeaks[i]));
-        cr->line_to(MARGIN + TEXT_OFFSET + CHANNEL_WIDTH/2.0 + i*(MARGIN + CHANNEL_WIDTH + 0.5), dB2Pixels(m_fPeaks[i]));
-        cr->stroke();
+        //Create cairo context using the buffer surface
+        Cairo::RefPtr<Cairo::Context> cr = Cairo::Context::create(m_vu_surface_ptr);
+
+        //Clear current context
+        cr->save();
+        cr->set_operator(Cairo::OPERATOR_CLEAR);
+        cr->paint();
         cr->restore();
-      }
+        //Draw the VU
+        Cairo::RefPtr<Cairo::LinearGradient> bkg_gradient_ptr;
+        //Reset mean buffer
+        m_iBuffCnt = 0;
+        long mtime, seconds, useconds;
+        gettimeofday(&m_end, NULL);
+
+        seconds  = m_end.tv_sec  - m_start.tv_sec;
+        useconds = m_end.tv_usec - m_start.tv_usec;
+        mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
+
+        //Clip max
+        m_fValue =  m_fValue > m_fMax ? m_fMax :  m_fValue;
+
+        if (m_fValue >= m_fPeak)
+        {
+        m_fPeak = m_fValue;
+        gettimeofday(&m_start , NULL);
+        }
+
+        else if (mtime > PEAK_CLEAR_TIMEOUT)
+        {
+        m_fPeak = -100.0;
+        }
+
+
+        cr->save();
+        cr->set_line_width(CHANNEL_WIDTH - 4);
+        cr->set_line_cap(Cairo::LINE_CAP_ROUND);
+        bkg_gradient_ptr = Cairo::LinearGradient::create(
+        MARGIN  + TEXT_OFFSET + CHANNEL_WIDTH/2.0 + MARGIN + CHANNEL_WIDTH + 0.5,
+        dB2Pixels(m_fMin),
+        MARGIN + TEXT_OFFSET + CHANNEL_WIDTH/2.0 + MARGIN + CHANNEL_WIDTH + 0.5,
+        dB2Pixels(m_fMax)
+
+        );
+
+        if(m_bIsGainReduction)
+        {
+        bkg_gradient_ptr->add_color_stop_rgba (0.0, 1.0, 0.5, 0.0, 0.0);
+        bkg_gradient_ptr->add_color_stop_rgba (0.01, 1.0, 0.5, 0.0, 1.0);
+        bkg_gradient_ptr->add_color_stop_rgba (1.0, 1.0, 0.0, 0.0, 1.0);
+        }
+        else
+        {
+        bkg_gradient_ptr->add_color_stop_rgba (0.0, 0.0, 1.0, 0.0, 0.0);
+        bkg_gradient_ptr->add_color_stop_rgba (0.01, 0.0, 1.0, 0.0, 1.0);
+        bkg_gradient_ptr->add_color_stop_rgba (0.5, 1.0, 1.0, 0.0, 1.0);
+        bkg_gradient_ptr->add_color_stop_rgba (1.0, 1.0, 0.0, 0.0, 1.0);
+        }
+        cr->set_source(bkg_gradient_ptr);
+
+        //The VU
+        if(m_fValue >= m_fMin)
+        {
+        cr->move_to(
+            MARGIN + TEXT_OFFSET + CHANNEL_WIDTH/2.0 + MARGIN + CHANNEL_WIDTH + 0.5,
+            dB2Pixels(m_fMin)
+        );
+        cr->line_to(
+            MARGIN + TEXT_OFFSET + CHANNEL_WIDTH/2.0 + MARGIN + CHANNEL_WIDTH + 0.5,
+            dB2Pixels(m_fValue)
+        );
+        cr->stroke();
+        }
+
+        //The peak
+        if(m_fPeak >= m_fMin)
+        {
+            cr->move_to(
+                MARGIN + TEXT_OFFSET + CHANNEL_WIDTH/2.0 + MARGIN + CHANNEL_WIDTH + 0.5,
+                dB2Pixels(m_fPeak)
+            );
+            cr->line_to(
+                MARGIN + TEXT_OFFSET + CHANNEL_WIDTH/2.0 + MARGIN + CHANNEL_WIDTH + 0.5,
+                dB2Pixels(m_fPeak)
+            );
+            cr->stroke();
+            cr->restore();
+        }
     }
-  }
 }
 
 bool VUWidget::on_timeout_redraw()

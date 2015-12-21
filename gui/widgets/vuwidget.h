@@ -32,7 +32,7 @@
 class VUWidget : public Gtk::DrawingArea
 {
   public:
-    VUWidget(int iChannels, float fMin, float fMax,  std::string title, bool IsGainReduction = false, bool DrawThreshold = false);
+    VUWidget(float fMin, float fMax,  std::string title, bool IsGainReduction = false, bool DrawThreshold = false);
     ~VUWidget();
     void setValue(int iChannel, float fValue);
   
@@ -48,7 +48,6 @@ protected:
   //Override default signal handler:
   virtual bool on_expose_event(GdkEventExpose* event);
   virtual bool on_timeout_redraw();
-  void clearPeak(int uChannel);
   
   //Mouse grab signal handlers
   virtual bool on_button_press_event(GdkEventButton* event);
@@ -61,23 +60,23 @@ protected:
   virtual void redraw_foreground();
   virtual void redraw_faderwidget();
   virtual void redraw_vuwidget();
-  
+
   int m_iChannels;
   float m_fMin; //Min representable value in dB
   float m_fMax; //Max representable value in dB
   bool m_bIsGainReduction;
   bool bMotionIsConnected;
-  float* m_fValues;
-  float* m_fPeaks;
-  int* m_iBuffCnt;
+  float m_fValue;
+  float m_fPeak;
+  int m_iBuffCnt;
   
   float m_ThFaderValue;
   int m_iThFaderPositon;
   bool m_bDrawThreshold;
   //sigc::connection* m_peak_connections;
 private:  
-    struct timeval *m_start; //Array of timeval start, on for each channel
-    struct timeval *m_end; //Array of timeval end, on for each channel
+    struct timeval m_start;
+    struct timeval m_end;
     
     int width;
     int height;
