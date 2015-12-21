@@ -19,7 +19,6 @@ include_directories(${GTKMM_INCLUDE_DIRS})
 
 #Build fbdm GUI
 set( Eq_Bands_Count 10)
-set( Eq_Channels_Count 1)
 set( Eq_Uri  "\"https://github.com/Dominik-Sauer/eq10q-fork/fbdm/gui\"")
 configure_file("${PROJECT_SOURCE_DIR}/gui/eq10q_ui.cpp" "${PROJECT_SOURCE_DIR}/gui/fbdm_ui.cpp")
 add_library(fbdm_gui SHARED fbdm_ui.cpp)

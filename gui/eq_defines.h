@@ -21,13 +21,13 @@
 #ifndef EQ_GUI_DEFINES_H
 #define EQ_GUI_DEFINES_H
 
-#define EQ_BYPASS           0
-#define EQ_INGAIN           1
-#define EQ_OUTGAIN          2
+#define EQ_BYPASS               0
+#define EQ_INGAIN               1
+#define EQ_OUTGAIN              2
 
-#define INPUT_PORT          3
-#define OUTPUT_PORT         4
-#define BAND_PORT_OFFSET    5
+#define INPUT_PORT              3
+#define OUTPUT_PORT             4
+#define BAND_PORT_OFFSET        5
 
 #define FFT_N 4096 //FFT sample size, must be a power of 2
 #endif

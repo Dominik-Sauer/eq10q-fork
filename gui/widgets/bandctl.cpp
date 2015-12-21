@@ -41,7 +41,7 @@
 #define PEAK_ICON_FILE "combopix/peak.png"
 #define NOTCH_ICON_FILE "combopix/notch.png"
 
-BandCtl::BandCtl( const int iBandNum, bool *bSemafor, const char* bundlepath, bool isStereo):
+BandCtl::BandCtl( const int iBandNum, bool *bSemafor, const char* bundlepath):
 m_bBtnInitialized(false),
 m_TypePopUp(0),
 m_iBandNum(iBandNum),
@@ -50,8 +50,7 @@ m_budlepath(bundlepath),
 m_iAntValueX(0),
 m_iAntValueY(0),
 m_HpfLpf_slope(0),
-m_bGlowBand(false),
-m_bIsStereoPlugin(isStereo)
+m_bGlowBand(false)
 {
   //Init button values to something
   m_GainBtn.value = 0.0f;
@@ -75,7 +74,7 @@ m_bIsStereoPlugin(isStereo)
   
   m_FilterType = PEAK;
   loadTypeImg();
-  set_size_request(46 + m_image_surface_ptr->get_width(), ( m_bIsStereoPlugin ? 80 : 65) + m_image_surface_ptr->get_height()); 
+  set_size_request(46 + m_image_surface_ptr->get_width(), 65 + m_image_surface_ptr->get_height()); 
  
   //Fill Filter Type popup menu
   m_TypePopUp = new Gtk::Menu();
@@ -121,11 +120,7 @@ m_bIsStereoPlugin(isStereo)
   m_TypePopUp->append(*itm_peak);
   m_TypePopUp->append(*itm_notch);
   m_TypePopUp->set_size_request(110 ,-1);
-  
-  //Setup MidSide button
-  m_MidSideBtn.MidSideMode = false;
-  m_MidSideBtn.State = DUAL;
-  
+    
   show();
   
   //Connect mouse signals
@@ -354,12 +349,6 @@ BandCtl::signal_BandUnSelected BandCtl::signal_band_unselected()
   return m_bandUnSelectedSignal;
 }
 
-BandCtl::signal_MidSideChanged BandCtl::signal_mid_side_changed()
-{
-  return m_midsideChangedSignal;
-}
-
-
 void BandCtl::on_menu_lpf()
 {
   m_FilterType = LPF_ORDER_2;
@@ -496,15 +485,7 @@ bool BandCtl::on_button_press_event(GdkEventButton* event)
       m_GainBtn.pressed = m_bBandIsEnabled & (event->x > m_GainBtn.x0 && event->x < m_GainBtn.x1 && event->y > m_GainBtn.y0 && event->y < m_GainBtn.y1);
       m_FreqBtn.pressed = m_bBandIsEnabled & (event->x > m_FreqBtn.x0 && event->x < m_FreqBtn.x1 && event->y > m_FreqBtn.y0 && event->y < m_FreqBtn.y1);
       m_QBtn.pressed = m_bBandIsEnabled & (event->x > m_QBtn.x0 && event->x < m_QBtn.x1 && event->y > m_QBtn.y0 && event->y < m_QBtn.y1);
-      
-      if(m_bIsStereoPlugin)
-      {
-        m_MidSideBtn.ML_pressed = m_bBandIsEnabled & (event->x > m_MidSideBtn.Mx && event->x < m_MidSideBtn.Dx && event->y > m_MidSideBtn.y0 && event->y < m_MidSideBtn.y1);
-        m_MidSideBtn.Dual_pressed = m_bBandIsEnabled & (event->x > m_MidSideBtn.Dx && event->x < m_MidSideBtn.Sx && event->y > m_MidSideBtn.y0 && event->y < m_MidSideBtn.y1);
-        m_MidSideBtn.SR_pressed = m_bBandIsEnabled & (event->x > m_MidSideBtn.Sx && event->x < m_MidSideBtn.x1 && event->y > m_MidSideBtn.y0 && event->y < m_MidSideBtn.y1);
-        redraw_MidSide_widget(); 
-      }
-      
+            
       //Disable Q for LPF1 and LPF2
       m_QBtn.pressed &= !(m_FilterType == LPF_ORDER_1);
       m_QBtn.pressed &= !(m_FilterType == HPF_ORDER_1);
@@ -525,37 +506,13 @@ bool BandCtl::on_button_release_event(GdkEventButton* event)
     m_bBandIsEnabled = !m_bBandIsEnabled;
     m_bandChangedSignal.emit(m_iBandNum, ONOFF_TYPE, m_bBandIsEnabled);
   }
-  
-  //Check MidSide buttons
-  if(m_bIsStereoPlugin && m_MidSideBtn.ML_pressed && (event->x > m_MidSideBtn.Mx && event->x < m_MidSideBtn.Dx && event->y > m_MidSideBtn.y0 && event->y < m_MidSideBtn.y1))
-  {
-    m_MidSideBtn.State = ML;
-    m_midsideChangedSignal.emit(m_iBandNum);
-  }
-  if(m_bIsStereoPlugin && m_MidSideBtn.Dual_pressed && (event->x > m_MidSideBtn.Dx && event->x < m_MidSideBtn.Sx && event->y > m_MidSideBtn.y0 && event->y < m_MidSideBtn.y1))
-  {
-    m_MidSideBtn.State = DUAL;
-    m_midsideChangedSignal.emit(m_iBandNum);
-  }
-  if(m_bIsStereoPlugin && m_MidSideBtn.SR_pressed &&  (event->x > m_MidSideBtn.Sx && event->x < m_MidSideBtn.x1 && event->y > m_MidSideBtn.y0 && event->y < m_MidSideBtn.y1))
-  {
-    m_MidSideBtn.State = SR;
-    m_midsideChangedSignal.emit(m_iBandNum);
-  }
-  
+    
   m_EnableBtn.pressed = false;
   m_TypeBtn.pressed = false;
   m_GainBtn.pressed = false;
   m_FreqBtn.pressed = false;
   m_QBtn.pressed    = false;
   
-  if(m_bIsStereoPlugin)
-  {
-    m_MidSideBtn.Dual_pressed = false;
-    m_MidSideBtn.ML_pressed = false;
-    m_MidSideBtn.SR_pressed = false;
-    redraw_MidSide_widget(); 
-  }
   //m_iAntValueX = m_iAntValueY = 0;
   
   //Inform bode plot
@@ -612,15 +569,7 @@ bool BandCtl::on_mouse_motion_event(GdkEventMotion* event)
     m_GainBtn.focus   = m_bBandIsEnabled & (event->x > m_GainBtn.x0 && event->x < m_GainBtn.x1 && event->y > m_GainBtn.y0 && event->y < m_GainBtn.y1);
     m_FreqBtn.focus   = m_bBandIsEnabled & (event->x > m_FreqBtn.x0 && event->x < m_FreqBtn.x1 && event->y > m_FreqBtn.y0 && event->y < m_FreqBtn.y1);
     m_QBtn.focus      = m_bBandIsEnabled & (event->x > m_QBtn.x0 && event->x < m_QBtn.x1 && event->y > m_QBtn.y0 && event->y < m_QBtn.y1);
-    
-    if(m_bIsStereoPlugin)
-    {
-      m_MidSideBtn.Dual_focus = m_bBandIsEnabled & (event->x > m_MidSideBtn.Dx && event->x < m_MidSideBtn.Sx && event->y > m_MidSideBtn.y0 && event->y < m_MidSideBtn.y1);
-      m_MidSideBtn.ML_focus = m_bBandIsEnabled & (event->x > m_MidSideBtn.Mx && event->x < m_MidSideBtn.Dx && event->y > m_MidSideBtn.y0 && event->y < m_MidSideBtn.y1);
-      m_MidSideBtn.SR_focus = m_bBandIsEnabled & (event->x > m_MidSideBtn.Sx && event->x < m_MidSideBtn.x1 && event->y > m_MidSideBtn.y0 && event->y < m_MidSideBtn.y1);
-      redraw_MidSide_widget(); 
-    }
-    
+        
     //Disable Q for LPF1 and LPF2
     m_QBtn.focus &= !(m_FilterType == LPF_ORDER_1);
     m_QBtn.focus &= !(m_FilterType == HPF_ORDER_1);
@@ -634,7 +583,7 @@ bool BandCtl::on_mouse_motion_event(GdkEventMotion* event)
   m_iAntValueY = event->y;
   
   //Notify band over
-  if(m_GainBtn.focus || m_FreqBtn.focus || m_QBtn.focus || m_TypeBtn.focus || m_EnableBtn.focus || m_MidSideBtn.Dual_focus || m_MidSideBtn.ML_focus || m_MidSideBtn.SR_focus)
+  if(m_GainBtn.focus || m_FreqBtn.focus || m_QBtn.focus || m_TypeBtn.focus || m_EnableBtn.focus )
   {
     m_bandSelectedSignal.emit(m_iBandNum);
   }
@@ -978,13 +927,6 @@ bool BandCtl::on_mouse_leave_widget(GdkEventCrossing* event)
   m_FreqBtn.focus = m_FreqBtn.pressed; //Lost focus only if is no pressed
   m_QBtn.focus = m_QBtn.pressed; //Lost focus only if is no pressed
   keyPressEvent.disconnect();
-  if(m_bIsStereoPlugin)
-  {
-    m_MidSideBtn.Dual_focus = false;
-    m_MidSideBtn.ML_focus = false;
-    m_MidSideBtn.SR_focus = false;
-    redraw_MidSide_widget(); 
-  }
   redraw();
   m_bandUnSelectedSignal.emit();
   return true;
@@ -1009,12 +951,6 @@ bool BandCtl::on_expose_event(GdkEventExpose* event)
     width = allocation.get_width();
     height = allocation.get_height();
 
-    if(!m_midSide_surface_ptr && m_bIsStereoPlugin)
-    {  
-      //The Mid Side button surface
-      m_midSide_surface_ptr = Cairo::ImageSurface::create(Cairo::FORMAT_ARGB32, width, (height - 4.0*OUTER_BORDER)/4.0);
-    }
-   
     if(!m_bBtnInitialized)
     {
       m_EnableBtn.focus = false;
@@ -1038,7 +974,7 @@ bool BandCtl::on_expose_event(GdkEventExpose* event)
       m_GainBtn.x0 = OUTER_BORDER + 1;
       m_GainBtn.x1 = width - OUTER_BORDER;
       m_GainBtn.y0 = m_EnableBtn.y1 + 1;
-      m_GainBtn.y1 = m_EnableBtn.y1 + (height - 4.0*OUTER_BORDER - m_EnableBtn.y1)/ ( m_bIsStereoPlugin ? 4.0 : 3.0);
+      m_GainBtn.y1 = m_EnableBtn.y1 + (height - 4.0*OUTER_BORDER - m_EnableBtn.y1)/3.0;
       m_GainBtn.text = false;
       m_GainBtn.min = GAIN_MIN;
       m_GainBtn.max = GAIN_MAX;
@@ -1048,7 +984,7 @@ bool BandCtl::on_expose_event(GdkEventExpose* event)
       m_FreqBtn.x0 = OUTER_BORDER + 1;
       m_FreqBtn.x1 = width - OUTER_BORDER;
       m_FreqBtn.y0 = m_GainBtn.y1 + 1;
-      m_FreqBtn.y1 = m_EnableBtn.y1 +  2.0*(height - 4.0*OUTER_BORDER - m_EnableBtn.y1)/ (m_bIsStereoPlugin ? 4.0 : 3.0);
+      m_FreqBtn.y1 = m_EnableBtn.y1 +  2.0*(height - 4.0*OUTER_BORDER - m_EnableBtn.y1)/3.0;
       m_FreqBtn.text = false;
       m_FreqBtn.min = FREQ_MIN;
       m_FreqBtn.max = FREQ_MAX;
@@ -1058,29 +994,11 @@ bool BandCtl::on_expose_event(GdkEventExpose* event)
       m_QBtn.x0 = OUTER_BORDER + 1;
       m_QBtn.x1 = width - OUTER_BORDER;
       m_QBtn.y0 = m_FreqBtn.y1 + 1;
-      m_QBtn.y1 =  m_EnableBtn.y1 +  3.0*(height - 4.0*OUTER_BORDER - m_EnableBtn.y1)/ (m_bIsStereoPlugin ? 4.0 : 3.0);
+      m_QBtn.y1 =  m_EnableBtn.y1 +  3.0*(height - 4.0*OUTER_BORDER - m_EnableBtn.y1)/3.0;
       m_QBtn.text = false;
       m_QBtn.min = PEAK_Q_MIN;
       m_QBtn.max = PEAK_Q_MAX;
   
-      if(m_bIsStereoPlugin)
-      {
-        m_MidSideBtn.Dual_focus = false;
-        m_MidSideBtn.ML_focus = false;
-        m_MidSideBtn.SR_focus = false;
-        m_MidSideBtn.Dual_pressed = false;
-        m_MidSideBtn.ML_pressed = false;
-        m_MidSideBtn.SR_pressed = false;
-        m_MidSideBtn.x0 = 4.0*OUTER_BORDER;
-        m_MidSideBtn.x1 =  width - 4.0*OUTER_BORDER;
-        m_MidSideBtn.y0 = round(m_QBtn.y1 + 2.0);
-        m_MidSideBtn.y1 =  height - 2.0*OUTER_BORDER;
-        m_MidSideBtn.Mx = m_MidSideBtn.x0;
-        m_MidSideBtn.Dx = (m_MidSideBtn.x1 - m_MidSideBtn.x0)/3.0 + m_MidSideBtn.Mx;
-        m_MidSideBtn.Sx = (m_MidSideBtn.x1 - m_MidSideBtn.x0)/3.0 + m_MidSideBtn.Dx;
-        redraw_MidSide_widget(); 
-      }
-      
       m_bBtnInitialized = true;
     }
   
@@ -1152,15 +1070,6 @@ bool BandCtl::on_expose_event(GdkEventExpose* event)
     drawBandButton(&m_FreqBtn, cr);
     drawBandButton(&m_QBtn, cr);
     
-    //Draw mid Side surface
-    if(m_midSide_surface_ptr && m_bIsStereoPlugin)
-    {
-      cr->save();          
-      cr->set_source(m_midSide_surface_ptr, 0, m_MidSideBtn.y0);    
-      cr->paint();
-      cr->restore();
-    }
-  
     //Draw ComboBox Filter Type icon 
     cr->save();
     cr->set_source (m_image_surface_ptr, m_TypeBtn.x0 - 0.5, m_TypeBtn.y0 - 0.5);
@@ -1308,197 +1217,5 @@ void BandCtl::drawBandButton(BandCtl::Button* btn, Cairo::RefPtr<Cairo::Context>
 
   
   cr->restore();
-}
-
-void BandCtl::redraw_MidSide_widget()
-{
-  if(m_midSide_surface_ptr && m_bIsStereoPlugin)
-  {  
-    //Create cairo context using the buffer surface
-    Cairo::RefPtr<Cairo::Context> cr = Cairo::Context::create(m_midSide_surface_ptr);
-    const double btnH = round(m_midSide_surface_ptr->get_height() - 6.0*OUTER_BORDER);
-        
-    //Clear current context  
-    cr->save();
-    cr->set_operator(Cairo::OPERATOR_CLEAR);
-    cr->paint();
-    cr->restore();
-    
-    //Draw Color background on selected button
-    cr->save();
-    Cairo::RefPtr<Cairo::LinearGradient> bkg_gradient_ptr = Cairo::LinearGradient::create(0, 0, 0, m_midSide_surface_ptr->get_height()); 
-    switch(m_MidSideBtn.State)
-    {
-      case DUAL:
-        cr->rectangle(m_MidSideBtn.Dx, 0, m_MidSideBtn.Sx - m_MidSideBtn.Dx, btnH);
-        break;
-        
-      case ML:
-        cr->begin_new_sub_path();
-        cr->arc( m_MidSideBtn.x0 + btnH/2.0, btnH/2.0 + 0.5, btnH/2.0, M_PI/2.0, -M_PI/2.0);
-        cr->line_to( m_MidSideBtn.Dx,  0);
-        cr->line_to( m_MidSideBtn.Dx,  btnH);
-        cr->close_path();
-        break;
-        
-      case SR:
-        cr->begin_new_sub_path();
-        cr->arc( m_MidSideBtn.x1 - btnH/2.0, btnH/2.0 + 0.5, btnH/2.0 , -M_PI/2.0, M_PI/2.0);   
-        cr->line_to( m_MidSideBtn.Sx,  btnH);
-        cr->line_to( m_MidSideBtn.Sx,  0);
-        cr->close_path();
-        break;
-    }
-      
-    bkg_gradient_ptr->add_color_stop_rgba (0.1, 0.4, 0.4, 0.4, 0.5 );
-    bkg_gradient_ptr->add_color_stop_rgba (0.7, m_Color.get_red_p(), m_Color.get_green_p(), m_Color.get_blue_p(), 0.6 );  
-    bkg_gradient_ptr->add_color_stop_rgba (0.9, 0.2, 0.2, 0.2, 0.3 );                          
-    cr->set_source(bkg_gradient_ptr);  
-    cr->fill();
-    cr->restore();
-    
-    //Draw a box
-    cr->save();
-    cr->begin_new_sub_path();
-    cr->arc( m_MidSideBtn.x0 + btnH/2.0, btnH/2.0 + 0.5, btnH/2.0, M_PI/2.0, -M_PI/2.0);
-    cr->arc( m_MidSideBtn.x1 - btnH/2.0, btnH/2.0 + 0.5, btnH/2.0 , -M_PI/2.0, M_PI/2.0);
-    cr->close_path();
-    cr->set_source_rgba(0.05,0.05,0.05,0.2);
-    cr->fill_preserve();
-    cr->set_line_width(1.0);
-    if(m_bBandIsEnabled)
-    {
-      cr->set_source_rgba(m_Color.get_red_p(), m_Color.get_green_p(), m_Color.get_blue_p(), 0.7);
-      cr->stroke_preserve();
-    }
-    cr->set_source_rgba(0.5, 0.5, 0.5, 0.7);
-    cr->stroke();
-    cr->move_to(m_MidSideBtn.Dx, 0);
-    cr->line_to(m_MidSideBtn.Dx, btnH);
-    cr->stroke();
-    cr->move_to(m_MidSideBtn.Sx, 0);
-    cr->line_to(m_MidSideBtn.Sx, btnH);
-    cr->stroke();
-    cr->restore();
-    
-    //Draw Text
-    Glib::RefPtr<Pango::Layout> pangoLayout = Pango::Layout::create(cr);
-    Pango::FontDescription font_desc("sans bold 10px");
-    pangoLayout->set_font_description(font_desc);
-    pangoLayout->set_alignment(Pango::ALIGN_CENTER);
- 
-    cr->save();
-    if(m_MidSideBtn.ML_focus)
-    {
-      cr->set_source_rgba(0.0, 1.0, 1.0, 1.0);
-    }
-    else if(m_MidSideBtn.State == BandCtl::ML)
-    {
-      cr->set_source_rgba(0.0, 1.0, 1.0, 0.8);
-    }
-    else
-    {
-      cr->set_source_rgba(0.5, 0.5, 0.5, 0.6);
-    }
-    pangoLayout->set_width(Pango::SCALE * (m_MidSideBtn.Dx - m_MidSideBtn.Mx));  
-    cr->move_to(m_MidSideBtn.Mx,  btnH/2.0 - 5); 
-    if(m_MidSideBtn.MidSideMode)
-    {
-      pangoLayout->set_text("M");
-    }
-    else
-    {
-      pangoLayout->set_text("L");
-    }
-    pangoLayout->show_in_cairo_context(cr);
-    cr->stroke();
-    
-    if(m_MidSideBtn.SR_focus)
-    {
-      cr->set_source_rgba(0.0, 1.0, 1.0, 1.0);
-    }
-    else if(m_MidSideBtn.State == BandCtl::SR)
-    {
-      cr->set_source_rgba(1.0, 1.0, 1.0, 0.8);
-    }
-    else
-    {
-      cr->set_source_rgba(0.5, 0.5, 0.5, 0.6);
-    }
-    pangoLayout->set_width(Pango::SCALE * (m_MidSideBtn.x1 - m_MidSideBtn.Sx));    
-    cr->move_to(m_MidSideBtn.Sx,  btnH/2.0 - 5); 
-    if(m_MidSideBtn.MidSideMode)
-    {
-      pangoLayout->set_text("S");
-    }
-    else
-    {
-      pangoLayout->set_text("R");
-    }
-    pangoLayout->show_in_cairo_context(cr);
-    cr->stroke();
-    cr->restore();
-   
-    //Draw circle in the center
-    cr->save();
-    cr->set_line_width(1.5);
-    if(m_MidSideBtn.Dual_focus)
-    {
-      cr->set_source_rgba(0.0, 1.0, 1.0, 1.0);
-    }
-    else if( m_MidSideBtn.State == DUAL )
-    {
-      cr->set_source_rgba(0.0, 1.0, 1.0, 0.6);
-    }
-    else
-    {
-      cr->set_source_rgba(0.5, 0.5, 0.5, 0.6);
-    }
-    const double Xcenter = (m_midSide_surface_ptr->get_width()/2.0);
-    cr->arc(Xcenter - btnH/4.0 + (btnH/10.0), (btnH/2.0) + 0.5, btnH/3.5, 0.0, 2.0*M_PI);
-    cr->stroke();
-    
-    if(m_MidSideBtn.Dual_focus)
-    {
-      cr->set_source_rgba(0.0, 1.0, 1.0, 1.0);
-    }
-    else if( m_MidSideBtn.State == DUAL )
-    {
-      cr->set_source_rgba(1.0, 1.0, 1.0, 0.6);
-    }
-    else
-    {
-      cr->set_source_rgba(0.5, 0.5, 0.5, 0.6);
-    }
-    cr->arc(Xcenter + btnH/4.0 - (btnH/10.0), (btnH/2.0) + 0.5, btnH/3.5, 0.0, 2.0*M_PI);
-    cr->stroke();
-    cr->restore();
-  
-  }
-}
-
-void BandCtl::setStereoMode(bool bIsMidSide)
-{
-  if(m_bIsStereoPlugin)
-  {
-    m_MidSideBtn.MidSideMode = bIsMidSide;
-    redraw_MidSide_widget(); 
-    redraw();
-  }
-}
-
-BandCtl::MSState BandCtl::getStereoState()
-{
-  return m_MidSideBtn.State;
-}
-
-void BandCtl::setStereoState(BandCtl::MSState state)
-{
-  if(m_bIsStereoPlugin)
-  {
-    m_MidSideBtn.State = state;
-    redraw_MidSide_widget(); 
-    redraw();
-  }
 }
 

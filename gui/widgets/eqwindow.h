@@ -72,7 +72,7 @@ class EqMainWindow : public MainWidget
     void gui_port_event(LV2UI_Handle ui, uint32_t port, uint32_t buffer_size, uint32_t format, const void * buffer)
     {     
       //Atom event from DSP
-      if((int)port == (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + 2*m_iNumOfChannels))
+      if((int)port == (BAND_PORT_OFFSET + 5*m_iNumOfBands + 2))
       {
          
           const LV2_Atom* atom = (const LV2_Atom*)buffer;               
@@ -189,89 +189,53 @@ class EqMainWindow : public MainWidget
 
 	  default:
 	    //Connect BandGain ports
-	    if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + m_iNumOfBands))
+	    if((int)port >= (BAND_PORT_OFFSET) && (int)port < (BAND_PORT_OFFSET + m_iNumOfBands))
 	    {
-	      ///m_BandCtlArray[(int)port - INPUT_PORT - 2*m_iNumOfChannels]->setGain(data);
-	      ///m_Bode->setBandGain((int)port - INPUT_PORT - 2*m_iNumOfChannels, data);
-	      m_CurParams->setBandGain((int)port - INPUT_PORT - 2*m_iNumOfChannels, data);
+	      m_CurParams->setBandGain((int)port - BAND_PORT_OFFSET, data);
 	      m_port_event_Curve = true; //Marck port even boolean
-	      m_port_event_Curve_Gain[(int)port - INPUT_PORT - 2*m_iNumOfChannels] = true;
+	      m_port_event_Curve_Gain[(int)port - BAND_PORT_OFFSET] = true;
 	      #ifdef PRINT_DEBUG_INFO
 		std::cout<<"\t-- Band Gain"<<std::endl;
 	      #endif  
 	    }
 
 	    //Connect BandFreq ports
-	    else if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels + m_iNumOfBands) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + 2*m_iNumOfBands))
+	    else if((int)port >= (BAND_PORT_OFFSET + m_iNumOfBands) && (int)port < (BAND_PORT_OFFSET + 2*m_iNumOfBands))
 	    {
-	      ///m_BandCtlArray[(int)port - INPUT_PORT - 2*m_iNumOfChannels - m_iNumOfBands]->setFreq(data);
-	      ///m_Bode->setBandFreq((int)port - INPUT_PORT - 2*m_iNumOfChannels - m_iNumOfBands, data);
-	      m_CurParams->setBandFreq((int)port - INPUT_PORT - 2*m_iNumOfChannels - m_iNumOfBands, data);
+	      m_CurParams->setBandFreq((int)port - BAND_PORT_OFFSET - m_iNumOfBands, data);
 	      m_port_event_Curve = true; //Marck port even boolean
-	      m_port_event_Curve_Freq[(int)port - INPUT_PORT - 2*m_iNumOfChannels - m_iNumOfBands] = true;
+	      m_port_event_Curve_Freq[(int)port - BAND_PORT_OFFSET - m_iNumOfBands] = true;
 	      #ifdef PRINT_DEBUG_INFO
 		std::cout<<"\t-- Band Freq"<<std::endl;
 	      #endif  
 	    }
 
 	    //Connect BandParam ports
-	    else if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels + 2*m_iNumOfBands) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + 3*m_iNumOfBands))
+	    else if((int)port >= (BAND_PORT_OFFSET + 2*m_iNumOfBands) && (int)port < (BAND_PORT_OFFSET + 3*m_iNumOfBands))
 	    {
-	      ///m_BandCtlArray[(int)port - INPUT_PORT - 2*m_iNumOfChannels - 2*m_iNumOfBands]->setQ(data);
-	      ///m_Bode->setBandQ((int)port - INPUT_PORT - 2*m_iNumOfChannels - 2*m_iNumOfBands, data);
-	      m_CurParams->setBandQ((int)port - INPUT_PORT - 2*m_iNumOfChannels - 2*m_iNumOfBands, data);
+	      m_CurParams->setBandQ((int)port - BAND_PORT_OFFSET - 2*m_iNumOfBands, data);
 	      m_port_event_Curve = true; //Marck port even boolean
-	      m_port_event_Curve_Q[(int)port - INPUT_PORT - 2*m_iNumOfChannels - 2*m_iNumOfBands] = true;
+	      m_port_event_Curve_Q[(int)port - BAND_PORT_OFFSET - 2*m_iNumOfBands] = true;
 	      #ifdef PRINT_DEBUG_INFO
 		std::cout<<"\t-- Band Q"<<std::endl;
 	      #endif  
 	    }
 
 	    //Connect BandType ports
-	    else if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels + 3*m_iNumOfBands) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + 4*m_iNumOfBands))
+	    else if((int)port >= (BAND_PORT_OFFSET + 3*m_iNumOfBands) && (int)port < (BAND_PORT_OFFSET + 4*m_iNumOfBands))
 	    {
-	      ///m_BandCtlArray[(int)port - INPUT_PORT - 2*m_iNumOfChannels - 3*m_iNumOfBands]->setFilterType(data);
-	      ///m_Bode->setBandType((int)port - INPUT_PORT - 2*m_iNumOfChannels - 3*m_iNumOfBands, data);
-	      m_CurParams->setBandType((int)port - INPUT_PORT - 2*m_iNumOfChannels - 3*m_iNumOfBands, ((int)data) & 0xFF);
+	      m_CurParams->setBandType((int)port - BAND_PORT_OFFSET - 3*m_iNumOfBands, ((int)data) & 0xFF);
 	      m_port_event_Curve = true; //Marck port even boolean
-	      m_port_event_Curve_Type[(int)port - INPUT_PORT - 2*m_iNumOfChannels - 3*m_iNumOfBands] = true;
+	      m_port_event_Curve_Type[(int)port - BAND_PORT_OFFSET - 3*m_iNumOfBands] = true;
 	      #ifdef PRINT_DEBUG_INFO
 		std::cout<<"\t-- Band Type"<<std::endl;
 	      #endif  
 	    }
 
 	    //Connect BandEnabled ports
-	    else if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels + 4*m_iNumOfBands) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands))
+	    else if((int)port >= (BAND_PORT_OFFSET + 4*m_iNumOfBands) && (int)port < (BAND_PORT_OFFSET + 5*m_iNumOfBands))
 	    {
-	      ///m_BandCtlArray[(int)port - INPUT_PORT - 2*m_iNumOfChannels - 4*m_iNumOfBands]->setEnabled(data > 0.5);
-	      ///m_Bode->setBandEnable((int)port - INPUT_PORT - 2*m_iNumOfChannels - 4*m_iNumOfBands, data > 0.5);
-
-              int iMidSide = (int)data >> 1;
-              const int sel_band = (int)port - INPUT_PORT - 2*m_iNumOfChannels - 4*m_iNumOfBands;
-              switch(iMidSide)
-              {
-                case 0: 
-		  m_BandCtlArray[sel_band]->setStereoState(BandCtl::DUAL);
-		  if(m_iNumOfChannels == 1)
-		  {
-		    m_Bode->setStereoState(sel_band, PlotEQCurve::MONO);
-		  }
-		  else
-		  {
-		    m_Bode->setStereoState(sel_band, PlotEQCurve::DUAL);
-		  }
-                  break;
-                  
-                case 1:
-                  m_BandCtlArray[sel_band]->setStereoState(BandCtl::ML);
-                  m_Bode->setStereoState(sel_band, PlotEQCurve::ML);
-                  break;
-                  
-                case 2:
-                  m_BandCtlArray[sel_band]->setStereoState(BandCtl::SR);
-                  m_Bode->setStereoState(sel_band, PlotEQCurve::SR);
-                  break;
-              }
+              const int sel_band = (int)port - BAND_PORT_OFFSET - 4*m_iNumOfBands;
               
               int iEnable = (int)data & 0x01;
 	      m_CurParams->setBandEnabled(sel_band, iEnable > 0);
@@ -283,32 +247,29 @@ class EqMainWindow : public MainWidget
 	    }
 
 	    //Connect VuInput ports
-	    else if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + m_iNumOfChannels))
+	    else if( (int)port == (BAND_PORT_OFFSET + 5*m_iNumOfBands) )
 	    {
-              m_VuMeterIn->setValue((int)port - INPUT_PORT - 2*m_iNumOfChannels - 5*m_iNumOfBands,data);
+          m_VuMeterIn->setValue(
+            (int)port - BAND_PORT_OFFSET - 5*m_iNumOfBands, 
+            data
+          );
 	      #ifdef PRINT_DEBUG_INFO
-		std::cout<<"\t-- Vu input"<<std::endl;
+		    std::cout<<"\t-- Vu input"<<std::endl;
 	      #endif  
 	    }
 
 	    //Connect VuOutput ports
-	    else if((int)port >= (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + m_iNumOfChannels) && (int)port < (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + 2*m_iNumOfChannels))
+	    else if( (int)port == (BAND_PORT_OFFSET + 5*m_iNumOfBands + 1) )
 	    {
-              m_VuMeterOut->setValue((int)port - INPUT_PORT - 2*m_iNumOfChannels - 5*m_iNumOfBands - m_iNumOfChannels, data);
+          m_VuMeterOut->setValue(
+            (int)port - BAND_PORT_OFFSET - 5*m_iNumOfBands - 1,
+            data
+          );
 	      #ifdef PRINT_DEBUG_INFO
-		std::cout<<"\t-- Vu output"<<std::endl;
+		    std::cout<<"\t-- Vu output"<<std::endl;
 	      #endif  
 	    }
 	      
-	    //Connect Stereo Mode port
-            else if((int)port == (INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + 2*m_iNumOfChannels + 2))
-            {
-              setStereoMode( data > 0.5);
-              #ifdef PRINT_DEBUG_INFO
-                std::cout<<"\t-- Mid Side"<<std::endl;
-              #endif  
-            }
-            
 	    //No more ports here
 	    else
 	    {
@@ -337,7 +298,7 @@ class EqMainWindow : public MainWidget
     BandCtl **m_BandCtlArray; 
     Gtk::HBox m_BandBox, m_ABFlatBox, m_GainEqBox, m_PlotBox;
     Gtk::VBox m_CurveBypassBandsBox, m_MainBox, m_InGainBox, m_OutGainBox, m_FftCtlVBox, m_dBScaleBox, m_FftdBBox, m_StereoBox;
-    ToggleButton m_BypassButton, m_FftRtaActive, m_FftSpecActive, m_dB10Scale, m_dB25Scale, m_dB50Scale, m_LRStereoMode, m_MSStereoMode;
+    ToggleButton m_BypassButton, m_FftRtaActive, m_FftSpecActive, m_dB10Scale, m_dB25Scale, m_dB50Scale;
     AbButton m_AButton;
     Gtk::Alignment m_FlatAlign, m_ABAlign, m_ButtonAAlign, m_BypassAlign, m_LoadAlign, m_SaveAlign, m_FftAlign, m_FftAlignInner, m_FftAlngGain, m_FftAlngRange, m_dBScaleAlign, m_dBScaleAlignInner, m_StereoInnerAlng, m_StereAlng;
     Button m_FlatButton, m_SaveButton, m_LoadButton, m_FftHold;
@@ -346,14 +307,13 @@ class EqMainWindow : public MainWidget
     Gtk::Image *image_logo_center;
     KnobWidget2 *m_GainFaderIn, *m_GainFaderOut, *m_FftGain, *m_FftRange;
     VUWidget *m_VuMeterIn, *m_VuMeterOut;
-    SideChainBox *m_FftBox, *m_dBScaleFrame, *m_MidSideBox;
+    SideChainBox *m_FftBox, *m_dBScaleFrame;
     
     void loadEqParams();
     void changeAB(EqParams *toBeCurrent);
     void saveToFile();
     void loadFromFile();
     void sendAtomFftOn(bool fft_activated);
-    void setStereoMode(bool isMidSide);
     
     //Signal Handlers
     void onButtonA();
@@ -375,20 +335,16 @@ class EqMainWindow : public MainWidget
     void onBodeUnselectBand();
     void onBandCtlSelectBand(int band);
     void onBandCtlUnselectBand();
-    void onBandCtlMidSideChanged(int band);
     
     void onDbScale10Changed();
     void onDbScale25Changed();
     void onDbScale50Changed();
     
     void onLeftRightModeSelected();
-    void onMidSideModeSelected();
-
         
   private:
     double SampleRate;
-    float m_bypassValue;   
-    const int m_iNumOfChannels;
+    float m_bypassValue;
     const int m_iNumOfBands;
     bool m_bMutex, m_port_event_InGain, m_port_event_OutGain, m_port_event_Bypass, m_port_event_Curve;
     bool *m_port_event_Curve_Gain, *m_port_event_Curve_Freq, *m_port_event_Curve_Q, *m_port_event_Curve_Type, *m_port_event_Curve_Enable;

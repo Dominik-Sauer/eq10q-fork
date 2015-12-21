@@ -43,7 +43,6 @@ This file implements functionalities for a large numbers of equalizers
 
 //Data from CMake
 #define NUM_BANDS @Eq_Bands_Count@
-#define NUM_CHANNELS @Eq_Channels_Count@
 #define EQ_URI @Eq_Uri@
 
 
@@ -132,21 +131,17 @@ static void connectPortEQ(LV2_Handle instance, uint32_t port, void *data)
       plugin->fOutGain = data;
     break;
 
+    case INPUT_PORT:
+      plugin->fInput = data;
+    break;
+    
+    case OUTPUT_PORT:
+      plugin->fOutput = data;
+    break;
+
     default:
-        //Connect audio input ports
-        if( port == INPUT_PORT )
-        {
-            plugin->fInput = data;
-        }
-
-        //Connect audio output ports
-        if( port == (OUTPUT_PORT) )
-        {
-            plugin->fOutput = data;
-        }
-
         //Connect BandGain ports
-        else if( port >= (BAND_PORT_OFFSET) && port < (BAND_PORT_OFFSET + NUM_BANDS))
+        if( port >= (BAND_PORT_OFFSET) && port < (BAND_PORT_OFFSET + NUM_BANDS))
         {
             plugin->fBandGain[port - BAND_PORT_OFFSET] = data;
         }
