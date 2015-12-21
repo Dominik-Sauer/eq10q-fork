@@ -25,7 +25,6 @@ add_subdirectory(dsp)
 
 #Build fbdm DSP
 set( Eq_Bands_Count 10)
-set( Eq_Channels_Count 1)
 set( Eq_Uri  "\"https://github.com/Dominik-Sauer/eq10q-fork/fbdm\"")
 configure_file("${PROJECT_SOURCE_DIR}/eq.c" "${PROJECT_SOURCE_DIR}/fbdm.c")
 add_library(fbdm SHARED fbdm.c)

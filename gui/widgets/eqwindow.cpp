@@ -37,13 +37,10 @@ EqMainWindow::EqMainWindow(int iNumBands, const char *uri, const char *bundlePat
   m_dB10Scale("10 dB"),
   m_dB25Scale("25 dB"),
   m_dB50Scale("50 dB"),
-  m_LRStereoMode("L/R"),
-  m_MSStereoMode("M/S"),
   m_FlatButton("Flat"),
   m_SaveButton("Save"),
   m_LoadButton("Load"), 
   m_FftHold("Hold"),
-  m_iNumOfChannels(1),
   m_iNumOfBands(iNumBands),
   m_bMutex(false),
   m_port_event_InGain(false),
@@ -139,7 +136,7 @@ EqMainWindow::EqMainWindow(int iNumBands, const char *uri, const char *bundlePat
   m_FftdBBox.pack_start(m_dBScaleAlign,Gtk::PACK_SHRINK);
   m_FftdBBox.pack_start(m_FftAlign,Gtk::PACK_SHRINK);
   
-  m_Bode = Gtk::manage(new PlotEQCurve(m_iNumOfBands, m_iNumOfChannels));
+  m_Bode = Gtk::manage(new PlotEQCurve(m_iNumOfBands));
   
   m_BandBox.set_spacing(0);
   m_BandBox.set_homogeneous(true);
@@ -147,12 +144,11 @@ EqMainWindow::EqMainWindow(int iNumBands, const char *uri, const char *bundlePat
   
   for (int i = 0; i< m_iNumOfBands; i++)
   {
-    m_BandCtlArray[i] = Gtk::manage(new BandCtl(i, &m_bMutex, m_bundlePath.c_str(), m_iNumOfChannels == 2));
+    m_BandCtlArray[i] = Gtk::manage( new BandCtl(i, &m_bMutex, m_bundlePath.c_str()) );
     m_BandBox.pack_start(*m_BandCtlArray[i], Gtk::PACK_SHRINK);
     m_BandCtlArray[i] -> signal_changed().connect( sigc::mem_fun(*this, &EqMainWindow::onBandChange));
     m_BandCtlArray[i] -> signal_band_selected().connect( sigc::mem_fun(*this, &EqMainWindow::onBandCtlSelectBand));
     m_BandCtlArray[i] -> signal_band_unselected().connect( sigc::mem_fun(*this, &EqMainWindow::onBandCtlUnselectBand));
-    m_BandCtlArray[i] -> signal_mid_side_changed().connect( sigc::mem_fun(*this, &EqMainWindow::onBandCtlMidSideChanged));
   }
 
   //Bode plot layout
@@ -285,7 +281,7 @@ EqMainWindow::~EqMainWindow()
 void EqMainWindow::request_sample_rate()
 {
   //Request Sample rate
-  int AtomPortNumber = INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + 2*m_iNumOfChannels + 1;
+  int AtomPortNumber = BAND_PORT_OFFSET + 5*m_iNumOfBands + 3;
   uint8_t obj_buf[64];
   lv2_atom_forge_set_buffer(&forge, obj_buf, sizeof(obj_buf)); 
   LV2_Atom_Forge_Frame frame;
@@ -398,15 +394,15 @@ void EqMainWindow::changeAB(EqParams *toBeCurrent)
     
     //Write to LV2 ports
     aux = m_CurParams->getBandGain(i);
-    write_function(controller, i + INPUT_PORT + 2*m_iNumOfChannels, sizeof(float), 0, &aux); //Gain
+    write_function(controller, i + BAND_PORT_OFFSET, sizeof(float), 0, &aux); //Gain
     aux = m_CurParams->getBandFreq(i);
-    write_function(controller, i + INPUT_PORT + 2*m_iNumOfChannels + m_iNumOfBands, sizeof(float), 0, &aux); //Freq
+    write_function(controller, i + BAND_PORT_OFFSET + m_iNumOfBands, sizeof(float), 0, &aux); //Freq
     aux = m_CurParams->getBandQ(i);
-    write_function(controller, i + INPUT_PORT + 2*m_iNumOfChannels + 2*m_iNumOfBands, sizeof(float), 0, &aux); //Q
+    write_function(controller, i + BAND_PORT_OFFSET + 2*m_iNumOfBands, sizeof(float), 0, &aux); //Q
     aux = m_CurParams->getBandEnabled(i);
-    write_function(controller, i + INPUT_PORT + 2*m_iNumOfChannels + 4*m_iNumOfBands, sizeof(float), 0, &aux); //Enable
+    write_function(controller, i + BAND_PORT_OFFSET + 4*m_iNumOfBands, sizeof(float), 0, &aux); //Enable
     aux = m_CurParams->getBandType(i);
-    write_function(controller, i + INPUT_PORT + 2*m_iNumOfChannels + 3*m_iNumOfBands, sizeof(float), 0, &aux); //Filter type
+    write_function(controller, i + BAND_PORT_OFFSET + 3*m_iNumOfBands, sizeof(float), 0, &aux); //Filter type
   }
 }
 
@@ -465,25 +461,25 @@ void EqMainWindow::onBandChange(int iBand, int iField, float fValue)
   switch(iField)
   {
     case GAIN_TYPE: 
-      write_function(controller, iBand + INPUT_PORT + 2*m_iNumOfChannels, sizeof(float), 0, &fValue);
+      write_function(controller, iBand + BAND_PORT_OFFSET, sizeof(float), 0, &fValue);
       m_CurParams->setBandGain(iBand, fValue);
       m_Bode->setBandGain(iBand, fValue);
       break;
       
     case FREQ_TYPE:
-      write_function(controller, iBand + INPUT_PORT + 2*m_iNumOfChannels + m_iNumOfBands, sizeof(float), 0, &fValue);
+      write_function(controller, iBand + BAND_PORT_OFFSET + m_iNumOfBands, sizeof(float), 0, &fValue);
       m_CurParams->setBandFreq(iBand, fValue);
       m_Bode->setBandFreq(iBand, fValue);
       break;
       
     case Q_TYPE:
-      write_function(controller, iBand + INPUT_PORT + 2*m_iNumOfChannels + 2*m_iNumOfBands, sizeof(float), 0, &fValue);
+      write_function(controller, iBand + BAND_PORT_OFFSET + 2*m_iNumOfBands, sizeof(float), 0, &fValue);
       m_CurParams->setBandQ(iBand, fValue);
       m_Bode->setBandQ(iBand, fValue);
       break;
       
     case FILTER_TYPE:
-      write_function(controller, iBand + INPUT_PORT + 2*m_iNumOfChannels + 3*m_iNumOfBands, sizeof(float), 0, &fValue);
+      write_function(controller, iBand + BAND_PORT_OFFSET + 3*m_iNumOfBands, sizeof(float), 0, &fValue);
       m_CurParams->setBandType(iBand, (int) fValue);
       m_Bode->setBandType(iBand, (int) fValue);
       break;
@@ -491,7 +487,7 @@ void EqMainWindow::onBandChange(int iBand, int iField, float fValue)
     case ONOFF_TYPE:
       int ival = (int) fValue;
       float fVal = (float)ival;
-      write_function(controller, iBand + INPUT_PORT + 2*m_iNumOfChannels + 4*m_iNumOfBands, sizeof(float), 0, &fVal);
+      write_function(controller, iBand + BAND_PORT_OFFSET + 4*m_iNumOfBands, sizeof(float), 0, &fVal);
       m_CurParams->setBandEnabled(iBand, (fValue > 0.5)); 
       m_Bode->setBandEnable(iBand, (fValue > 0.5));
       break;  
@@ -501,17 +497,6 @@ void EqMainWindow::onBandChange(int iBand, int iField, float fValue)
     std::cout<<"Return"<<std::endl;
   #endif
 }
-
-void EqMainWindow::onBandCtlMidSideChanged(int band)
-{ 
-  int ival = m_CurParams->getBandEnabled(band) ? 1 : 0;
-  float fValue = (float)ival;
-  write_function(controller, band + INPUT_PORT + 2*m_iNumOfChannels + 4*m_iNumOfBands, sizeof(float), 0, &fValue);
-  
-  //TODO maybe I want to use AB comparation with MID-SIDE????
-  //m_CurParams->setBandEnabled(iBand, (fValue > 0.5)); 
-}
-
 
 void EqMainWindow::onInputGainChange()
 {
@@ -560,15 +545,15 @@ void EqMainWindow::onCurveChange(int band_ix, float Gain, float Freq, float Q)
   
   //Write to LV2 plugin ports
   //Gain
-  write_function(controller, band_ix + INPUT_PORT + 2*m_iNumOfChannels, sizeof(float), 0, &Gain);
+  write_function(controller, band_ix + BAND_PORT_OFFSET, sizeof(float), 0, &Gain);
   m_CurParams->setBandGain(band_ix, Gain);
 
   //Freq
-  write_function(controller, band_ix + INPUT_PORT + 2*m_iNumOfChannels + m_iNumOfBands, sizeof(float), 0, &Freq);
+  write_function(controller, band_ix + BAND_PORT_OFFSET + m_iNumOfBands, sizeof(float), 0, &Freq);
   m_CurParams->setBandFreq(band_ix, Freq);
 
   //Q
-  write_function(controller, band_ix + INPUT_PORT + 2*m_iNumOfChannels + 2*m_iNumOfBands, sizeof(float), 0, &Q);
+  write_function(controller, band_ix + BAND_PORT_OFFSET + 2*m_iNumOfBands, sizeof(float), 0, &Q);
   m_CurParams->setBandQ(band_ix, Q);
 
 }
@@ -579,7 +564,7 @@ void EqMainWindow::onCurveBandEnable(int band_ix, bool IsEnabled)
 
   int ival = IsEnabled ? 1 : 0;
   float fVal = (float)ival;
-  write_function(controller, band_ix + INPUT_PORT + 2*m_iNumOfChannels + 4*m_iNumOfBands, sizeof(float), 0, &fVal);
+  write_function(controller, band_ix + BAND_PORT_OFFSET + 4*m_iNumOfBands, sizeof(float), 0, &fVal);
   m_CurParams->setBandEnabled(band_ix, IsEnabled); 
 }
 
@@ -714,7 +699,7 @@ void EqMainWindow::onHoldFft_release()
 
 void EqMainWindow::sendAtomFftOn(bool fft_activated)
 {
-  int AtomPortNumber = INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + 2*m_iNumOfChannels + 1;
+  int AtomPortNumber = BAND_PORT_OFFSET + 5*m_iNumOfBands + 3;
   uint8_t obj_buf[64];
   lv2_atom_forge_set_buffer(&forge, obj_buf, sizeof(obj_buf)); 
   LV2_Atom_Forge_Frame frame;
@@ -757,26 +742,3 @@ void EqMainWindow::onDbScale50Changed()
   m_Bode->setPlotdBRange(50.0);
 }
 
-void EqMainWindow::setStereoMode(bool isMidSide)
-{ 
-  m_MSStereoMode.set_active(isMidSide);
-  m_LRStereoMode.set_active(!isMidSide);
-  for(int i = 0; i < m_iNumOfBands; i++)
-  {
-    m_BandCtlArray[i]->setStereoMode(isMidSide);
-  }
-  int PortNumber = INPUT_PORT + 2*m_iNumOfChannels + 5*m_iNumOfBands + 2*m_iNumOfChannels + 2;
-  float fValue = isMidSide ? 1.0f : 0.0f;
-  write_function(controller, PortNumber, sizeof(float), 0, &fValue);
-}
-
-
-void EqMainWindow::onLeftRightModeSelected()
-{
-  setStereoMode(false);
-}
-
-void EqMainWindow::onMidSideModeSelected()
-{
-  setStereoMode(true);
-}
