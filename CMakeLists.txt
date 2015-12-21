@@ -31,26 +31,18 @@ configure_file("${PROJECT_SOURCE_DIR}/eq.c" "${PROJECT_SOURCE_DIR}/fbdm.c")
 add_library(fbdm SHARED fbdm.c)
 target_link_libraries( fbdm  lib_filter lib_vumeter m fftw3)
 
-#Build fbds DSP
-set( Eq_Bands_Count 10)
-set( Eq_Channels_Count 2)
-set( Eq_Uri  "\"https://github.com/Dominik-Sauer/eq10q-fork/fbds\"")
-configure_file("${PROJECT_SOURCE_DIR}/eq.c" "${PROJECT_SOURCE_DIR}/fbds.c")
-add_library(fbds SHARED fbds.c)
-target_link_libraries( fbds  lib_filter lib_vumeter m fftw3)
-
 #remove the lib prefix to all generated .so files
-set_target_properties(fbdm fbds PROPERTIES PREFIX "")
+set_target_properties(fbdm PROPERTIES PREFIX "")
 
 #CLEAN generated .c files on run 'make clean'
-SET( generatedEqConfigFiles ${PROJECT_SOURCE_DIR}/fbdm.c;${PROJECT_SOURCE_DIR}/fbds.c )
+SET( generatedEqConfigFiles ${PROJECT_SOURCE_DIR}/fbdm.c )
 SET_DIRECTORY_PROPERTIES(PROPERTIES  ADDITIONAL_MAKE_CLEAN_FILES "${generatedEqConfigFiles}")
 
 
 ##===========================THE LV2 INSTALLER================================================
 #INSTALL( DIRECTORY "${PROJECT_SOURCE_DIR}/${LV2_BUNDLE}" DESTINATION "${LV2_BUNDLE}")
-INSTALL( FILES "manifest.ttl" "fbdm.ttl" "fbds.ttl" DESTINATION "${LV2_BUNDLE}")
-INSTALL( TARGETS fbdm fbds DESTINATION "${LV2_BUNDLE}")
+INSTALL( FILES "manifest.ttl" "fbdm.ttl" DESTINATION "${LV2_BUNDLE}")
+INSTALL( TARGETS fbdm DESTINATION "${LV2_BUNDLE}")
 
 INCLUDE(CPack)
 # cpack -G TGZ

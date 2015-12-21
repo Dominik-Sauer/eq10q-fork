@@ -519,9 +519,6 @@ static inline void compute_coefficients( Filter* filter, Coefficients* p_coeffic
 
         case F_PEAK:
             compute_PEAK_coefficients( filter, p_coefficients );
-//             FilterClean( filter->subfilter );
-            filter->subfilter = FilterInit( filter->fs );
-            calcCoefs(filter->subfilter, 1.0, filter->freq, filter->q, F_BAND_PASS, filter->enable);
             break;
         case F_NOTCH:
             compute_NOTCH_coefficients( filter, p_coefficients );
