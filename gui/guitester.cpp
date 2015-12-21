@@ -92,7 +92,6 @@ HelloWorld::HelloWorld()
   m_EqWin = Gtk::manage(new EqMainWindow(2, 10,"https://github.com/Dominik-Sauer/eq10q-fork/fbds",@Eq_Gui_Test_Path@, features)); //TODO he canviat el constructor!
   //m_hbox.pack_start(*m_EqWin);
   //m_hbox.pack_start(*m_BassUp, Gtk::PACK_SHRINK);
-  //m_hbox.pack_start(m_TestScale);
   add(m_hbox);
 
   show_all_children();
@@ -113,24 +112,13 @@ HelloWorld::HelloWorld()
   
   //Prepare writefunction
   m_EqWin->write_function = writeTestFunction;
-  
-  //Test scale
-  m_TestScale.set_range(0.0 , 2.0);
-  m_TestScale.set_value(0.0);
-  m_TestScale.set_inverted(true);
-  m_TestScale.signal_value_changed().connect(sigc::mem_fun(*this, &HelloWorld::on_TestScale_changed));
+
 }
 
 HelloWorld::~HelloWorld()
 {
  delete m_EqWin;
 }
-
-void HelloWorld::on_TestScale_changed()
-{
-  float val = (float)m_TestScale.get_value();
-}
-
 
 void HelloWorld::on_realize()
 {

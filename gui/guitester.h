@@ -17,7 +17,6 @@ public:
 protected:
   EqMainWindow *m_EqWin;
   Gtk::HBox m_hbox;
-  Gtk::VScale m_TestScale;
   
   //Slots signal handlers
   void on_realize();
@@ -29,9 +28,6 @@ protected:
   void on_BandQChanged(int band, float q);
   void on_BandTypeChanged(int band, int type);
   void on_BandEnabledChanged(int band, bool enabled);
-  
-  //Test slot
-  void on_TestScale_changed();
 };
 
 #endif // GTKMM_EXAMPLE_HELLOWORLD_H
