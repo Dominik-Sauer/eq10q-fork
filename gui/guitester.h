@@ -6,9 +6,6 @@
 #include <gtkmm/scale.h>
 
 #include "widgets/eqwindow.h"
-#include "widgets/dynamicswindow.h"
-#include "widgets/bassupwindow.h"
-#include "widgets/midsidewindow.h"
 
 class HelloWorld : public Gtk::Window
 {
@@ -19,9 +16,6 @@ public:
 
 protected:
   EqMainWindow *m_EqWin;
-  DynMainWindow *m_GateWin;
-  BassUpMainWindow *m_BassUp;
-  MidSideMainWindow *m_MidSide;
   Gtk::HBox m_hbox;
   Gtk::VScale m_TestScale;
   
