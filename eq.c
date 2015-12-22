@@ -227,8 +227,6 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     const int iBypass = *(plugin_data->fBypass) > 0.0f ? 1 : 0;
     const float fInGain = dB2Lin(*(plugin_data->fInGain));
     const float fOutGain = dB2Lin(*(plugin_data->fOutGain));
-    int bd, pos; //loop index
-
 
     //Set up forge to write directly to notify output port.
     const uint32_t notify_capacity = plugin_data->notify_port->atom.size;
@@ -243,23 +241,23 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     double current_sample;
 
     //Read EQ Ports and mark to recompute if changed
-    for(bd = 0; bd<NUM_BANDS; bd++)
+    for(int band = 0; band<NUM_BANDS; band++)
     {
         if(
-            dB2Lin(*(plugin_data->fBandGain[bd])) != plugin_data->filter[bd]->gain
+            dB2Lin(*(plugin_data->fBandGain[band])) != plugin_data->filter[band]->gain
             ||
-            *plugin_data->fBandFreq[bd] != plugin_data->filter[bd]->freq
+            *plugin_data->fBandFreq[band] != plugin_data->filter[band]->freq
             ||
-            *plugin_data->fBandParam[bd] != plugin_data->filter[bd]->q
+            *plugin_data->fBandParam[band] != plugin_data->filter[band]->q
             ||
-            ((int)(*plugin_data->fBandType[bd])) != plugin_data->filter[bd]->filter_type
+            ((int)(*plugin_data->fBandType[band])) != plugin_data->filter[band]->filter_type
             ||
-            ((int)(*plugin_data->fBandEnabled[bd])) != plugin_data->filter[bd]->is_enabled
+            ((int)(*plugin_data->fBandEnabled[band])) != plugin_data->filter[band]->is_enabled
         ) {
-            recalcCoefs[bd] = 1;
+            recalcCoefs[band] = 1;
             forceRecalcCoefs = 1;
         } else {
-            recalcCoefs[bd] = 0;
+            recalcCoefs[band] = 0;
         }
     }
 
@@ -304,10 +302,8 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     int should_send_fft = 0;
 
     //Compute the filter
-    for (pos = 0; pos < sample_count; pos++)
-    {
-        //Get input
-        current_sample = (double)plugin_data->fInput[pos];
+    for ( int current_sample_index = 0; current_sample_index < sample_count; current_sample_index++) {
+        current_sample = (double)plugin_data->fInput[current_sample_index];
         DENORMAL_TO_ZERO(current_sample);
 
         //The input amplifier
@@ -318,54 +314,34 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
 
         //Process every band
         if(!iBypass) {
-
             //FFT of input data after input gain
             if(plugin_data->is_fft_on)
                 should_send_fft = add_sample_and_maybe_compute_FFT( &plugin_data->fft1, current_sample );
 
             //Coefs Interpolation
             if( forceRecalcCoefs ) {
-                for( bd = 0; bd < NUM_BANDS; bd++ ) {
-                    if(recalcCoefs[bd])
-                        calcCoefs(plugin_data->filter[bd],
-                            dB2Lin(*(plugin_data->fBandGain[bd])),
-                            *plugin_data->fBandFreq[bd],
-                            *plugin_data->fBandParam[bd],
-                            (int)(*plugin_data->fBandType[bd]),
-                            ((float)(0x01 & ((int)(*plugin_data->fBandEnabled[bd])))));
+                for( int band = 0; band < NUM_BANDS; band++ ) {
+                    if(recalcCoefs[band])
+                        calcCoefs(plugin_data->filter[band],
+                            dB2Lin(*(plugin_data->fBandGain[band])),
+                            *plugin_data->fBandFreq[band],
+                            *plugin_data->fBandParam[band],
+                            (int)(*plugin_data->fBandType[band]),
+                            ((float)(0x01 & ((int)(*plugin_data->fBandEnabled[band])))));
                 }
             }
 
+            for( int band = 0; band < NUM_BANDS; band++ )
+                computeFilter(plugin_data->filter[band], &plugin_data->buf[band], &current_sample);
 
-            //EQ PROCESSOR
-                computeFilter(plugin_data->filter[0], &plugin_data->buf[0],&current_sample);
-            #if NUM_BANDS >= 4
-                computeFilter(plugin_data->filter[1], &plugin_data->buf[1],&current_sample);
-                computeFilter(plugin_data->filter[2], &plugin_data->buf[2],&current_sample);
-                computeFilter(plugin_data->filter[3], &plugin_data->buf[3],&current_sample);
-            #endif
-
-            #if NUM_BANDS >= 6
-                computeFilter(plugin_data->filter[4], &plugin_data->buf[4],&current_sample);
-                computeFilter(plugin_data->filter[5], &plugin_data->buf[5],&current_sample);
-            #endif
-
-            #if NUM_BANDS ==10
-                computeFilter(plugin_data->filter[6], &plugin_data->buf[6],&current_sample);
-                computeFilter(plugin_data->filter[7], &plugin_data->buf[7],&current_sample);
-                computeFilter(plugin_data->filter[8], &plugin_data->buf[8],&current_sample);
-                computeFilter(plugin_data->filter[9], &plugin_data->buf[9],&current_sample);
-            #endif
-
-
-            //The output amplifier
             current_sample *= fOutGain;
+
             //Update VU output sample
             SetSample(plugin_data->OutputVu, current_sample);
         }
 
         //Write on output
-        plugin_data->fOutput[pos] = (float)current_sample;
+        plugin_data->fOutput[current_sample_index] = (float)current_sample;
     }
 
     if (should_send_fft) {
