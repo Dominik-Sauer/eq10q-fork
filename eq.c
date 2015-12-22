@@ -73,10 +73,9 @@ typedef struct {
     double sampleRate;
 
     //Plugin DSP
-    Filter *ProcFilter[NUM_BANDS]; //Dummy pointers to Filter structures, used in processing loop.
-    Filter *PortFilter[NUM_BANDS]; //Filter used for reading LV2 ports and containing the actual coeficients
-
+    Filter *filter[NUM_BANDS];
     Buffers buf[NUM_BANDS];
+
     Vu *InputVu;
     Vu *OutputVu;
 
@@ -92,7 +91,7 @@ static void cleanupEQ(LV2_Handle instance)
 
     for(i=0; i<NUM_BANDS; i++)
     {
-        FilterClean(plugin->PortFilter[i]);
+        FilterClean(plugin->filter[i]);
     }
 
     VuClean(plugin->InputVu);
@@ -196,9 +195,8 @@ static LV2_Handle instantiateEQ(const LV2_Descriptor *descriptor, double s_rate,
   
   for(i=0; i<NUM_BANDS; i++)
   {
-    plugin_data->PortFilter[i] = FilterInit(s_rate);
+    plugin_data->filter[i] = FilterInit(s_rate);
     flushBuffers(&plugin_data->buf[i]);
-    plugin_data->ProcFilter[i] = plugin_data->PortFilter[i]; //Initially all filters points to LV2 Port controlled filters
   }
   plugin_data->InputVu = VuInit(s_rate);
   plugin_data->OutputVu = VuInit(s_rate);
@@ -259,11 +257,11 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
   //Read EQ Ports and mark to recompute if changed
   for(bd = 0; bd<NUM_BANDS; bd++)
   {
-    if(dB2Lin(*(plugin_data->fBandGain[bd])) != plugin_data->PortFilter[bd]->gain ||
-	*plugin_data->fBandFreq[bd] != plugin_data->PortFilter[bd]->freq ||
-	*plugin_data->fBandParam[bd] != plugin_data->PortFilter[bd]->q ||
-	((int)(*plugin_data->fBandType[bd])) != plugin_data->PortFilter[bd]->iType ||
-	((int)(*plugin_data->fBandEnabled[bd])) != plugin_data->PortFilter[bd]->is_enabled)
+    if(dB2Lin(*(plugin_data->fBandGain[bd])) != plugin_data->filter[bd]->gain ||
+	*plugin_data->fBandFreq[bd] != plugin_data->filter[bd]->freq ||
+	*plugin_data->fBandParam[bd] != plugin_data->filter[bd]->q ||
+	((int)(*plugin_data->fBandType[bd])) != plugin_data->filter[bd]->iType ||
+	((int)(*plugin_data->fBandEnabled[bd])) != plugin_data->filter[bd]->is_enabled)
     {
       recalcCoefs[bd] = 1;
       forceRecalcCoefs = 1;
@@ -342,7 +340,7 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
 	{
 	  if(recalcCoefs[bd])
 	  {
-	    calcCoefs(plugin_data->PortFilter[bd],
+	    calcCoefs(plugin_data->filter[bd],
 		    dB2Lin(*(plugin_data->fBandGain[bd])),
 		    *plugin_data->fBandFreq[bd],
 		    *plugin_data->fBandParam[bd],
@@ -354,23 +352,23 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
       
       
       //EQ PROCESSOR
-        computeFilter(plugin_data->ProcFilter[0], &plugin_data->buf[0],&current_sample);
+        computeFilter(plugin_data->filter[0], &plugin_data->buf[0],&current_sample);
 	#if NUM_BANDS >= 4
-        computeFilter(plugin_data->ProcFilter[1], &plugin_data->buf[1],&current_sample);
-        computeFilter(plugin_data->ProcFilter[2], &plugin_data->buf[2],&current_sample);
-        computeFilter(plugin_data->ProcFilter[3], &plugin_data->buf[3],&current_sample);
+        computeFilter(plugin_data->filter[1], &plugin_data->buf[1],&current_sample);
+        computeFilter(plugin_data->filter[2], &plugin_data->buf[2],&current_sample);
+        computeFilter(plugin_data->filter[3], &plugin_data->buf[3],&current_sample);
     #endif
 
     #if NUM_BANDS >= 6
-        computeFilter(plugin_data->ProcFilter[4], &plugin_data->buf[4],&current_sample);
-        computeFilter(plugin_data->ProcFilter[5], &plugin_data->buf[5],&current_sample);
+        computeFilter(plugin_data->filter[4], &plugin_data->buf[4],&current_sample);
+        computeFilter(plugin_data->filter[5], &plugin_data->buf[5],&current_sample);
     #endif
 
     #if NUM_BANDS ==10
-        computeFilter(plugin_data->ProcFilter[6], &plugin_data->buf[6],&current_sample);
-        computeFilter(plugin_data->ProcFilter[7], &plugin_data->buf[7],&current_sample);
-        computeFilter(plugin_data->ProcFilter[8], &plugin_data->buf[8],&current_sample);
-        computeFilter(plugin_data->ProcFilter[9], &plugin_data->buf[9],&current_sample);
+        computeFilter(plugin_data->filter[6], &plugin_data->buf[6],&current_sample);
+        computeFilter(plugin_data->filter[7], &plugin_data->buf[7],&current_sample);
+        computeFilter(plugin_data->filter[8], &plugin_data->buf[8],&current_sample);
+        computeFilter(plugin_data->filter[9], &plugin_data->buf[9],&current_sample);
     #endif
 
            
