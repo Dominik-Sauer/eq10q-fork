@@ -59,7 +59,8 @@ typedef struct Filter {
     double b1_0, b1_1, b1_2, a1_1, a1_2; //Second Order extra coefficients
     int filter_order;  //filter order
     double fs; //sample rate
-    float gain, freq, q, enable;
+    float gain, freq, q;
+    int is_enabled;
     int iType; //Filter type
 
     //Interpolation Params
@@ -86,7 +87,7 @@ static inline Filter *FilterInit(double rate) {
     filter->gain = 1.0f;
     filter->freq = 100.0f;
     filter->q = 1.0f;
-    filter->enable = 0.0f;
+    filter->is_enabled = 0;
     filter->iType = 0;
 
     //Interpolations
@@ -462,21 +463,29 @@ static inline void compute_BPF_coefficients( Filter* filter, Coefficients* p_coe
     return;
 }
 
-static inline void normalize_coefs( Filter* filter, Coefficients* p_coefficients, float iEnabled ){
-    //Normalice coefficients to a0=1 and apply iEnabled
-    filter->b0 = (p_coefficients->b0/p_coefficients->a0)* iEnabled + (1.0 - iEnabled); //b0
-    filter->b1 = (p_coefficients->b1/p_coefficients->a0)* iEnabled; //b1
-    filter->b2 = (p_coefficients->b2/p_coefficients->a0)* iEnabled; //b2
-    filter->a1 = (p_coefficients->a1/p_coefficients->a0)* iEnabled; //a1
-    filter->a2 = (p_coefficients->a2/p_coefficients->a0)* iEnabled; //a2
-    filter->b1_0 = (p_coefficients->b1_0/p_coefficients->a1_0)* iEnabled + (1.0 - iEnabled);
-    filter->b1_1 = (p_coefficients->b1_1/p_coefficients->a1_0)* iEnabled;
-    filter->b1_2 = (p_coefficients->b1_2/p_coefficients->a1_0)* iEnabled;
-    filter->a1_1 = (p_coefficients->a1_1/p_coefficients->a1_0)* iEnabled;
-    filter->a1_2 = (p_coefficients->a1_2/p_coefficients->a1_0)* iEnabled;
+static inline void normalize_coefs( Filter* filter, Coefficients* p_coefficients ){
+    filter->b0 = (p_coefficients->b0/p_coefficients->a0); //b0
+    filter->b1 = (p_coefficients->b1/p_coefficients->a0); //b1
+    filter->b2 = (p_coefficients->b2/p_coefficients->a0); //b2
+    filter->a1 = (p_coefficients->a1/p_coefficients->a0); //a1
+    filter->a2 = (p_coefficients->a2/p_coefficients->a0); //a2
+    filter->b1_0 = (p_coefficients->b1_0/p_coefficients->a1_0);
+    filter->b1_1 = (p_coefficients->b1_1/p_coefficients->a1_0);
+    filter->b1_2 = (p_coefficients->b1_2/p_coefficients->a1_0);
+    filter->a1_1 = (p_coefficients->a1_1/p_coefficients->a1_0);
+    filter->a1_2 = (p_coefficients->a1_2/p_coefficients->a1_0);
 }
 
-static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ, int iType, float iEnabled);
+static inline void disable_filter( Filter* filter, int iType ) {
+    filter->is_enabled = 0;
+    filter->iType = iType;
+
+    filter->b0 = filter->b1_0 = 1.0;
+    filter->b1 = filter->b2 = filter->a1 = filter->a2
+    = filter->b1_1 = filter->b1_2 = filter->a1_1 = filter->a1_2 = 0.0;
+
+    return;
+}
 
 static inline void compute_coefficients( Filter* filter, Coefficients* p_coefficients, int iType ){
     switch( iType ) {
@@ -529,8 +538,13 @@ static inline void compute_coefficients( Filter* filter, Coefficients* p_coeffic
 }
 
 //Compute filter coefficients
-static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ, int iType, float iEnabled) //p2 = GAIN p3 = Q
+static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ, int iType, int is_enabled) //p2 = GAIN p3 = Q
 {   
+    if( ! is_enabled ) {
+        disable_filter( filter, iType );
+        return;
+    }
+
     Coefficients coefficients;
     Coefficients* p_coefficients = &coefficients;
 
@@ -540,12 +554,12 @@ static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ,
     interpolate_gain( filter, fGain );
     interpolate_q( filter, fQ );
 
-    filter->enable = iEnabled;
+    filter->is_enabled = is_enabled;
     filter->iType = iType;
 
     compute_coefficients( filter, p_coefficients, iType );
 
-    normalize_coefs( filter, p_coefficients, iEnabled);
+    normalize_coefs( filter, p_coefficients );
 
     //Print coefs
 //     printf("Coefs b0=%f b1=%f b2=%f a1=%f a2=%f\r\n",filter->b0,filter->b1,filter->b2,filter->a1,filter->a2);

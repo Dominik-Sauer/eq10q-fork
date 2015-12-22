@@ -290,7 +290,7 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
 	*plugin_data->fBandFreq[bd] != plugin_data->PortFilter[bd]->freq ||
 	*plugin_data->fBandParam[bd] != plugin_data->PortFilter[bd]->q ||
 	((int)(*plugin_data->fBandType[bd])) != plugin_data->PortFilter[bd]->iType ||
-	((float)(0x01 & ((int)(*plugin_data->fBandEnabled[bd])))) != plugin_data->PortFilter[bd]->enable)
+	((int)(*plugin_data->fBandEnabled[bd])) != plugin_data->PortFilter[bd]->is_enabled)
     {
       recalcCoefs[bd] = 1;
       forceRecalcCoefs = 1;
