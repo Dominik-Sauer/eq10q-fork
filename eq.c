@@ -45,44 +45,44 @@ This file implements functionalities for a large numbers of equalizers
 #define EQ_URI @Eq_Uri@
 
 typedef struct {
-  //Plugin ports
-  float *fBypass;
-  float *fInGain;
-  float *fOutGain;
-  float *fBandGain[NUM_BANDS];
-  float *fBandFreq[NUM_BANDS];
-  float *fBandParam[NUM_BANDS];
-  float *fBandType[NUM_BANDS];
-  float *fBandEnabled[NUM_BANDS];
-  float *fInput;
-  float *fOutput;
-  float *fVuIn;
-  float *fVuOut;
-  LV2_Atom_Sequence *notify_port;
-  const LV2_Atom_Sequence* control_port;
+    //Plugin ports
+    float *fBypass;
+    float *fInGain;
+    float *fOutGain;
+    float *fBandGain[NUM_BANDS];
+    float *fBandFreq[NUM_BANDS];
+    float *fBandParam[NUM_BANDS];
+    float *fBandType[NUM_BANDS];
+    float *fBandEnabled[NUM_BANDS];
+    float *fInput;
+    float *fOutput;
+    float *fVuIn;
+    float *fVuOut;
+    LV2_Atom_Sequence *notify_port;
+    const LV2_Atom_Sequence* control_port;
 
-  //Features
-  LV2_URID_Map *map;
-  
-  //Forge for creating atoms
-  LV2_Atom_Forge forge;
-  LV2_Atom_Forge_Frame notify_frame;
-  
-  //Atom URID
-  Eq10qURIs uris;
-  double sampleRate;
-        
-  //Plugin DSP
-  Filter *ProcFilter[NUM_BANDS]; //Dummy pointers to Filter structures, used in processing loop.
-  Filter *PortFilter[NUM_BANDS]; //Filter used for reading LV2 ports and containing the actual coeficients
-  Filter *FlatFilter; //Allways contains coeficients for a flat filter in order to be used as a bypass in MidSide processing option
-  Buffers buf[NUM_BANDS];
-  Vu *InputVu;
-  Vu *OutputVu;
+    //Features
+    LV2_URID_Map *map;
 
-  //FFT Analysis
-  FFT fft1;
-  int is_fft_on;
+    //Forge for creating atoms
+    LV2_Atom_Forge forge;
+    LV2_Atom_Forge_Frame notify_frame;
+
+    //Atom URID
+    Eq10qURIs uris;
+    double sampleRate;
+
+    //Plugin DSP
+    Filter *ProcFilter[NUM_BANDS]; //Dummy pointers to Filter structures, used in processing loop.
+    Filter *PortFilter[NUM_BANDS]; //Filter used for reading LV2 ports and containing the actual coeficients
+
+    Buffers buf[NUM_BANDS];
+    Vu *InputVu;
+    Vu *OutputVu;
+
+    //FFT Analysis
+    FFT fft1;
+    int is_fft_on;
 } EQ;
 
 static void cleanupEQ(LV2_Handle instance)
@@ -90,7 +90,6 @@ static void cleanupEQ(LV2_Handle instance)
     EQ *plugin = (EQ *)instance;
     int i;
 
-    FilterClean(plugin->FlatFilter);
     for(i=0; i<NUM_BANDS; i++)
     {
         FilterClean(plugin->PortFilter[i]);
@@ -195,9 +194,6 @@ static LV2_Handle instantiateEQ(const LV2_Descriptor *descriptor, double s_rate,
   EQ *plugin_data = (EQ *)malloc(sizeof(EQ));  
   plugin_data->sampleRate = s_rate;
   
-  plugin_data->FlatFilter = FilterInit(s_rate);
-  calcCoefs(plugin_data->FlatFilter, 0.0, 20.0, 1.0, PEAK, 0.0); //Create a always-flat filter in FlatFilter
-  
   for(i=0; i<NUM_BANDS; i++)
   {
     plugin_data->PortFilter[i] = FilterInit(s_rate);
@@ -258,7 +254,7 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
   int recalcCoefs[NUM_BANDS];
   int forceRecalcCoefs = 0;
 
-  double  current_sample;
+  double current_sample;
    
   //Read EQ Ports and mark to recompute if changed
   for(bd = 0; bd<NUM_BANDS; bd++)
