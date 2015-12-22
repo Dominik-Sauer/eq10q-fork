@@ -82,7 +82,6 @@ typedef struct {
 
   //FFT Analysis
   FFT fft1;
-  FFT fft2;
   int is_fft_on;
 } EQ;
 
@@ -101,7 +100,6 @@ static void cleanupEQ(LV2_Handle instance)
     VuClean(plugin->OutputVu);
 
     cleanup_FFT(&plugin->fft1);
-    cleanup_FFT(&plugin->fft2);
 
     free(instance);
 }
@@ -229,7 +227,6 @@ static LV2_Handle instantiateEQ(const LV2_Descriptor *descriptor, double s_rate,
   
   //Initialize FFT objects
   initialize_FFT(&plugin_data->fft1, FFT_N, 0);
-  initialize_FFT(&plugin_data->fft2, FFT_N, FFT_N/2);
   plugin_data->is_fft_on = 0; //Initialy no GUI then no need to compute FFT
 
   return (LV2_Handle)plugin_data;
@@ -300,7 +297,6 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
         {
           plugin_data->is_fft_on = 0;
           reset_FFT( &plugin_data->fft1, 0 );
-          reset_FFT( &plugin_data->fft2, FFT_N/2 );
         }
         else if(obj->body.otype == plugin_data->uris.atom_sample_rate_request)
         {
@@ -341,10 +337,7 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
       
       //FFT of input data after input gain
       if(plugin_data->is_fft_on)
-      {
-        should_send_fft = add_sample_and_maybe_compute_FFT( &plugin_data->fft1, current_sample, &plugin_data->fft2 );
-        add_sample_and_maybe_compute_FFT( &plugin_data->fft2, current_sample, 0 );
-      }
+          should_send_fft = add_sample_and_maybe_compute_FFT( &plugin_data->fft1, current_sample );
       
       //Coefs Interpolation
       if(forceRecalcCoefs)

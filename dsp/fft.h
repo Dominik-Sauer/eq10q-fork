@@ -18,5 +18,5 @@ typedef struct {
 void initialize_FFT( FFT *fft, int fft_size, int start );
 void reset_FFT( FFT *fft, int start );
 void cleanup_FFT( FFT *fft );
-int add_sample_and_maybe_compute_FFT( FFT* fft, double sample, FFT* delayed_fft );
+int add_sample_and_maybe_compute_FFT( FFT* fft, double sample );
 #endif
