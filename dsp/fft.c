@@ -6,8 +6,8 @@
 #endif
 
 static inline double _apply_window( double sample, int index, int size );
-static inline void _compute_FFT ( FFT* fft, FFT* delayed_fft );
-static inline void _normalize_frequency_sample( FFT* fft, FFT* delayed_fft, int i );
+static inline void _compute_FFT ( FFT* fft );
+static inline void _normalize_frequency_sample( FFT* fft, int i );
 
 void initialize_FFT( FFT *fft, int size, int start ) {
     fft->size = size;
@@ -34,13 +34,13 @@ void cleanup_FFT( FFT *fft ) {
     fftw_free(fft->frequency_samples);
 }
 
-int add_sample_and_maybe_compute_FFT( FFT* fft, double sample, FFT* delayed_fft ){
+int add_sample_and_maybe_compute_FFT( FFT* fft, double sample ){
     fft->time_samples[fft->index] = _apply_window( sample, fft->index, fft->size );
 
     if( ++fft->index < fft->size )
         return 0;
 
-    _compute_FFT( fft, delayed_fft );
+    _compute_FFT( fft );
     fft->index = 0;
 
     return 1;
@@ -57,13 +57,13 @@ static inline double _apply_window( double sample, int index, int size ) {
     );
 }
 
-static inline void _compute_FFT( FFT* fft, FFT* delayed_fft ) {
+static inline void _compute_FFT( FFT* fft ) {
     fftw_execute( fft->plan );
     for( int i = 0; i <= fft->half_size; i++ )
-        _normalize_frequency_sample( fft, delayed_fft, i );
+        _normalize_frequency_sample( fft, i );
 }
 
-static inline void _normalize_frequency_sample( FFT* fft, FFT* delayed_fft, int i ) {
+static inline void _normalize_frequency_sample( FFT* fft, int i ) {
     double real, img;
 
     real = fft->frequency_samples[i];
@@ -73,9 +73,4 @@ static inline void _normalize_frequency_sample( FFT* fft, FFT* delayed_fft, int 
         : 0.0;
 
     fft->frequency_samples[i] = fft->normalization * ( real*real + img*img );
-
-    if ( delayed_fft ) {
-        fft->frequency_samples[i] += delayed_fft->frequency_samples[i];
-        fft->frequency_samples[i] /= 2.0;
-    }
 }
