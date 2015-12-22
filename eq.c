@@ -275,6 +275,24 @@ static inline void _handle_control_events ( EQ *plugin_data ) {
     }
 }
 
+static inline void _send_fft ( EQ *plugin_data ) {
+    LV2_Atom_Forge_Frame frameFft;
+    lv2_atom_forge_frame_time(&plugin_data->forge, 0);
+    lv2_atom_forge_object( &plugin_data->forge, &frameFft, 0, plugin_data->uris.atom_fft_data_event);
+    lv2_atom_forge_key(&plugin_data->forge, plugin_data->uris.atom_fft_data_key);
+    lv2_atom_forge_vector(
+        &plugin_data->forge,
+        sizeof(double),
+        plugin_data->uris.atom_Double,
+        plugin_data->fft1.half_size,
+        plugin_data->fft1.frequency_samples
+    );
+    lv2_atom_forge_pop(&plugin_data->forge, &frameFft);
+
+    // Close off sequence
+    lv2_atom_forge_pop(&plugin_data->forge, &plugin_data->notify_frame);
+}
+
 static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     EQ *plugin_data = (EQ *)instance;
 
@@ -319,24 +337,21 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     //Read input Atom control port (Data from GUI)
     _handle_control_events( plugin_data );
 
-    int should_send_fft = 0;
+    int fft_is_ready = 0;
 
     //Compute the filter
     for ( int current_sample_index = 0; current_sample_index < sample_count; current_sample_index++) {
         current_sample = (double)plugin_data->fInput[current_sample_index];
         DENORMAL_TO_ZERO(current_sample);
-
-        //The input amplifier
         current_sample *= fInGain;
 
-        //Update VU input sample
         SetSample(plugin_data->InputVu, current_sample);
 
         //Process every band
         if(!iBypass) {
             //FFT of input data after input gain
             if(plugin_data->is_fft_on)
-                should_send_fft = add_sample_and_maybe_compute_FFT( &plugin_data->fft1, current_sample );
+                fft_is_ready = add_sample_and_maybe_compute_FFT( &plugin_data->fft1, current_sample );
 
             //Coefs Interpolation
             if( forceRecalcCoefs ) {
@@ -347,34 +362,24 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
                             *plugin_data->fBandFreq[band],
                             *plugin_data->fBandParam[band],
                             (int)(*plugin_data->fBandType[band]),
-                            ((float)(0x01 & ((int)(*plugin_data->fBandEnabled[band])))));
+                            (int)(*plugin_data->fBandEnabled[band])
+                        );
                 }
             }
 
             for( int band = 0; band < NUM_BANDS; band++ )
                 computeFilter(plugin_data->filter[band], &plugin_data->buf[band], &current_sample);
 
-            current_sample *= fOutGain;
-
-            //Update VU output sample
-            SetSample(plugin_data->OutputVu, current_sample);
         }
 
-        //Write on output
+        current_sample *= fOutGain;
+        SetSample(plugin_data->OutputVu, current_sample);
+
         plugin_data->fOutput[current_sample_index] = (float)current_sample;
     }
 
-    if (should_send_fft) {
-        LV2_Atom_Forge_Frame frameFft;
-        lv2_atom_forge_frame_time(&plugin_data->forge, 0);
-        lv2_atom_forge_object( &plugin_data->forge, &frameFft, 0, plugin_data->uris.atom_fft_data_event);
-        lv2_atom_forge_key(&plugin_data->forge, plugin_data->uris.atom_fft_data_key);
-        lv2_atom_forge_vector(&plugin_data->forge, sizeof(double), plugin_data->uris.atom_Double, (FFT_N/2), plugin_data->fft1.frequency_samples);
-        lv2_atom_forge_pop(&plugin_data->forge, &frameFft);
-
-        // Close off sequence
-        lv2_atom_forge_pop(&plugin_data->forge, &plugin_data->notify_frame);
-    }
+    if (fft_is_ready)
+        _send_fft( plugin_data );
 
     //Update VU ports
     *( plugin_data->fVuIn ) = ComputeVu(plugin_data->InputVu, sample_count);
