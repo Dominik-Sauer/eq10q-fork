@@ -66,8 +66,6 @@ typedef struct Filter {
     float freqInter;
     float gainInter;
     float QInter;
-
-    struct Filter* subfilter;
 } Filter;
 
 typedef struct
@@ -95,8 +93,6 @@ static inline Filter *FilterInit(double rate) {
     filter->freqInter = pow(10.0f, FREQ_INTER_DEC_SECOND/(float)rate);
     filter->gainInter = pow(10.0f,0.05f * GAIN_INTER_DB_SECOND)/(float)rate;
     filter->QInter = pow(10.0f, Q_INTER_DEC_SECOND/(float)rate);
-
-    filter->subfilter = NULL;
 
     return filter;
 }
@@ -561,35 +557,6 @@ static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ,
 //Compute filter
 static inline  void computeFilter(Filter *filter, Buffers *buf, double *inputSample)
 {
-    if( filter->subfilter ){
-        Filter* subfilter = filter->subfilter;
-        double input_sample_copy = (*inputSample);
-
-//         printf(">FG:%05.2f,SC:%f05.2\n", filter->gain, fabs(input_sample_copy));
-
-        //w(n)=x(n)-a1*w(n-1)-a2*w(n-2)
-        buf->buf_e0 =
-            input_sample_copy
-            -
-            subfilter->a1*buf->buf_e1
-            -
-            subfilter->a2*buf->buf_e2;
-        //y(n)=bo*w(n)+b1*w(n-1)+b2*w(n-2)
-        DENORMAL_TO_ZERO(buf->buf_e0);
-        input_sample_copy =
-            subfilter->b0*buf->buf_e0
-            +
-            subfilter->b1*buf->buf_e1
-            +
-            subfilter->b2*buf->buf_e2;
-
-        buf->buf_e2 = buf->buf_e1;
-        buf->buf_e1 = buf->buf_e0;
-
-//         printf("<FG:%05.2f,SC:%f05.2\n", filter->gain, fabs(input_sample_copy));
-
-//         calcCoefs(filter, (1.0-fabs(input_sample_copy))*filter->gain, filter->freq, filter->q, filter->iType, filter->enable);
-    }
   //Process 1, 2 orders
   //w(n)=x(n)-a1*w(n-1)-a2*w(n-2)
   buf->buf_0 = (*inputSample)-filter->a1*buf->buf_1-filter->a2*buf->buf_2;
