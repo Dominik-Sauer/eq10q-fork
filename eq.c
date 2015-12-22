@@ -87,12 +87,9 @@ typedef struct {
 static void cleanupEQ(LV2_Handle instance)
 {
     EQ *plugin = (EQ *)instance;
-    int i;
 
-    for(i=0; i<NUM_BANDS; i++)
-    {
+    for(int i=0; i<NUM_BANDS; i++)
         FilterClean(plugin->filter[i]);
-    }
 
     VuClean(plugin->InputVu);
     VuClean(plugin->OutputVu);
@@ -189,45 +186,38 @@ static void connectPortEQ(LV2_Handle instance, uint32_t port, void *data)
 
 static LV2_Handle instantiateEQ(const LV2_Descriptor *descriptor, double s_rate, const char *path, const LV2_Feature *const * features)
 {
-  int i;
-  EQ *plugin_data = (EQ *)malloc(sizeof(EQ));  
-  plugin_data->sampleRate = s_rate;
-  
-  for(i=0; i<NUM_BANDS; i++)
-  {
-    plugin_data->filter[i] = FilterInit(s_rate);
-    flushBuffers(&plugin_data->buf[i]);
-  }
-  plugin_data->InputVu = VuInit(s_rate);
-  plugin_data->OutputVu = VuInit(s_rate);
-  
-  // Get host features
-  for (i = 0; features[i]; ++i) 
-  {
-    if (!strcmp(features[i]->URI, LV2_URID__map))
-    {
-        plugin_data->map = (LV2_URID_Map*)features[i]->data;
-    } 
-  }
-  if (!plugin_data->map)
-  {
-    printf("EQ10Q Error: Host does not support urid:map\n");
-    goto fail;
-  }
+    EQ *plugin_data = (EQ *)malloc( sizeof(EQ) );
+    plugin_data->sampleRate = s_rate;
 
-  // Map URIs and initialise forge
-  map_eq10q_uris(plugin_data->map, &plugin_data->uris);
-  lv2_atom_forge_init(&plugin_data->forge, plugin_data->map);
-  
-  //Initialize FFT objects
-  initialize_FFT(&plugin_data->fft1, FFT_N, 0);
-  plugin_data->is_fft_on = 0; //Initialy no GUI then no need to compute FFT
+    for( int i = 0; i < NUM_BANDS; i++ ) {
+        plugin_data->filter[i] = FilterInit(s_rate);
+        flushBuffers(&plugin_data->buf[i]);
+    }
 
-  return (LV2_Handle)plugin_data;
+    plugin_data->InputVu = VuInit(s_rate);
+    plugin_data->OutputVu = VuInit(s_rate);
 
-  fail:
-    free(plugin_data);
-    return 0;
+    for (int i = 0; features[i]; i++ ) {
+        if( !strcmp( features[i]->URI, LV2_URID__map ) )
+            plugin_data->map = (LV2_URID_Map*)features[i]->data;
+    }
+
+    if ( !plugin_data->map ) {
+        printf("EQ10Q Error: Host does not support urid:map\n");
+        goto fail;
+    }
+
+    map_eq10q_uris( plugin_data->map, &plugin_data->uris );
+    lv2_atom_forge_init( &plugin_data->forge, plugin_data->map );
+
+    initialize_FFT( &plugin_data->fft1, FFT_N, 0 );
+    plugin_data->is_fft_on = 0;
+
+    return (LV2_Handle)plugin_data;
+
+    fail:
+        free( plugin_data );
+        return 0;
 }
 
 static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
