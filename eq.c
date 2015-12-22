@@ -204,7 +204,7 @@ static LV2_Handle instantiateEQ(const LV2_Descriptor *descriptor, double s_rate,
   plugin_data->sampleRate = s_rate;
   
   plugin_data->FlatFilter = FilterInit(s_rate);
-  calcCoefs(plugin_data->FlatFilter, 0.0, 20.0, 1.0, F_PEAK, 0.0); //Create a always-flat filter in FlatFilter
+  calcCoefs(plugin_data->FlatFilter, 0.0, 20.0, 1.0, PEAK, 0.0); //Create a always-flat filter in FlatFilter
   
   for(i=0; i<NUM_BANDS; i++)
   {
@@ -409,8 +409,8 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
         {
           //FFT inout buffer full compute
           fftw_execute(plugin_data->fft_p2);
-          
-          //Compute FFT Normalized Magnitude^2 
+
+          //Compute FFT Normalized Magnitude^2
           double real, img;
           int ffti;
           for(ffti = 0; ffti<= FFT_N/2; ffti++)
@@ -427,7 +427,7 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
             plugin_data->fft_out2[ffti] = plugin_data->fft_normalization*(real*real + img*img);
           }
 
-          plugin_data->fft_ix2 = 0;                
+          plugin_data->fft_ix2 = 0;
         }
       }
       

@@ -480,8 +480,8 @@ void EqMainWindow::onBandChange(int iBand, int iField, float fValue)
       
     case FILTER_TYPE:
       write_function(controller, iBand + BAND_PORT_OFFSET + 3*m_iNumOfBands, sizeof(float), 0, &fValue);
-      m_CurParams->setBandType(iBand, (int) fValue);
-      m_Bode->setBandType(iBand, (int) fValue);
+      m_CurParams->setBandType(iBand, (FilterType) fValue);
+      m_Bode->setBandType(iBand, (FilterType) fValue);
       break;
       
     case ONOFF_TYPE:
@@ -871,7 +871,7 @@ void EqMainWindow::gui_port_event(
                 #endif
             } else if((int)port >= (BAND_PORT_OFFSET + 3*m_iNumOfBands) && (int)port < (BAND_PORT_OFFSET + 4*m_iNumOfBands)) {
                 //Connect BandType ports
-                m_CurParams->setBandType((int)port - BAND_PORT_OFFSET - 3*m_iNumOfBands, ((int)data) & 0xFF);
+                m_CurParams->setBandType((int)port - BAND_PORT_OFFSET - 3*m_iNumOfBands, (FilterType)((int)data & 0xFF) );
                 m_port_event_Curve = true; //Marck port even boolean
                 m_port_event_Curve_Type[(int)port - BAND_PORT_OFFSET - 3*m_iNumOfBands] = true;
                 #ifdef PRINT_DEBUG_INFO

@@ -66,7 +66,7 @@ float EqParams::getBandQ(int iBand)
   return m_ptr_BandArray[iBand].fQ;
 }
 
-int EqParams::getBandType(int iBand)
+FilterType EqParams::getBandType(int iBand)
 {
   return m_ptr_BandArray[iBand].iType;
 }
@@ -101,7 +101,7 @@ void EqParams::setBandQ(int iBand, float fQ)
   m_ptr_BandArray[iBand].fQ = fQ;
 }
 
-void EqParams::setBandType(int iBand, int iType)
+void EqParams::setBandType(int iBand, FilterType iType)
 {
   m_ptr_BandArray[iBand].iType = iType;
 }
@@ -203,7 +203,7 @@ void EqParams::loadFromTtlFile(const char *uri)
     {
       m_ptr_BandArray[i].fGain = 0;
       m_ptr_BandArray[i].fQ = 2;
-      m_ptr_BandArray[i].iType = 11;
+      m_ptr_BandArray[i].iType = PEAK;
       m_ptr_BandArray[i].bIsEnabled = 0;
       m_ptr_BandArray[i].fFreq = cur_freq;
       

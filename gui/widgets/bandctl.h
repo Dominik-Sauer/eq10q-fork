@@ -22,7 +22,7 @@
   #define BAND_CTL_H
   
 
-#include "filter.h"
+#include "../../filter_type.h"
 #include <gtkmm/drawingarea.h>
 #include <gdkmm/pixbuf.h>
 #include <glibmm/refptr.h>

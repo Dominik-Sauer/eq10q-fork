@@ -20,6 +20,9 @@
 
 #ifndef EQ_PARAMS_H
   #define EQ_PARAMS_H
+
+#include "../../filter_type.h"
+
 class EqParams
 {
   public:
@@ -31,7 +34,7 @@ class EqParams
       float fGain;
       float fFreq;
       float fQ;
-      int iType;
+      FilterType iType;
       bool bIsEnabled;
     } EqBandStruct;
     
@@ -40,7 +43,7 @@ class EqParams
     void setBandGain(int iBand, float fGain);
     void setBandFreq(int iBand, float fFreq);
     void setBandQ(int iBand, float fQ);
-    void setBandType(int iBand, int iType);
+    void setBandType(int iBand, FilterType iType);
     void setBandEnabled(int iBand, bool bIsEnabled);
     
     float getInputGain();
@@ -48,7 +51,7 @@ class EqParams
     float getBandGain(int iBand);
     float getBandFreq(int iBand);
     float getBandQ(int iBand);
-    int getBandType(int iBand);
+    FilterType getBandType(int iBand);
     bool getBandEnabled(int iBand);
     
     void loadFromTtlFile(const char *uri);
