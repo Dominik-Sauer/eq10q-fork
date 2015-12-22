@@ -48,7 +48,7 @@ typedef struct Filter {
     double fs; //sample rate
     float gain, freq, q;
     int is_enabled;
-    FilterType iType; //Filter type
+    FilterType filter_type; //Filter type
 
     //Interpolation Params
     float freqInter;
@@ -75,7 +75,7 @@ static inline Filter *FilterInit(double rate) {
     filter->freq = 100.0f;
     filter->q = 1.0f;
     filter->is_enabled = 0;
-    filter->iType = FILTER_TYPE_NOT_SET;
+    filter->filter_type = FILTER_TYPE_NOT_SET;
 
     //Interpolations
     filter->freqInter = pow(10.0f, FREQ_INTER_DEC_SECOND/(float)rate);
@@ -463,9 +463,9 @@ static inline void normalize_coefs( Filter* filter, Coefficients* p_coefficients
     filter->a1_2 = (p_coefficients->a1_2/p_coefficients->a1_0);
 }
 
-static inline void disable_filter( Filter* filter, FilterType iType ) {
+static inline void disable_filter( Filter* filter, FilterType filter_type ) {
     filter->is_enabled = 0;
-    filter->iType = iType;
+    filter->filter_type = filter_type;
 
     filter->b0 = filter->b1_0 = 1.0;
     filter->b1 = filter->b2 = filter->a1 = filter->a2
@@ -474,8 +474,8 @@ static inline void disable_filter( Filter* filter, FilterType iType ) {
     return;
 }
 
-static inline void compute_coefficients( Filter* filter, Coefficients* p_coefficients, FilterType iType ){
-    switch( iType ) {
+static inline void compute_coefficients( Filter* filter, Coefficients* p_coefficients, FilterType filter_type ){
+    switch( filter_type ) {
         case HPF_ORDER_1:
             compute_HPF1_coefficients( filter, p_coefficients );
             break;
@@ -528,10 +528,10 @@ static inline void compute_coefficients( Filter* filter, Coefficients* p_coeffic
 }
 
 //Compute filter coefficients
-static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ, FilterType iType, int is_enabled) //p2 = GAIN p3 = Q
+static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ, FilterType filter_type, int is_enabled) //p2 = GAIN p3 = Q
 {   
     if( ! is_enabled ) {
-        disable_filter( filter, iType );
+        disable_filter( filter, filter_type );
         return;
     }
 
@@ -545,9 +545,9 @@ static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ,
     interpolate_q( filter, fQ );
 
     filter->is_enabled = is_enabled;
-    filter->iType = iType;
+    filter->filter_type = filter_type;
 
-    compute_coefficients( filter, p_coefficients, iType );
+    compute_coefficients( filter, p_coefficients, filter_type );
 
     normalize_coefs( filter, p_coefficients );
 

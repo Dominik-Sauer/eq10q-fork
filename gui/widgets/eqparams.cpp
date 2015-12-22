@@ -68,7 +68,7 @@ float EqParams::getBandQ(int iBand)
 
 FilterType EqParams::getBandType(int iBand)
 {
-  return m_ptr_BandArray[iBand].iType;
+  return m_ptr_BandArray[iBand].filter_type;
 }
 
 float EqParams::getInputGain()
@@ -101,9 +101,9 @@ void EqParams::setBandQ(int iBand, float fQ)
   m_ptr_BandArray[iBand].fQ = fQ;
 }
 
-void EqParams::setBandType(int iBand, FilterType iType)
+void EqParams::setBandType(int iBand, FilterType filter_type)
 {
-  m_ptr_BandArray[iBand].iType = iType;
+  m_ptr_BandArray[iBand].filter_type = filter_type;
 }
 
 void EqParams::setInputGain(float fInGain)
@@ -176,7 +176,7 @@ void EqParams::loadFromTtlFile(const char *uri)
       lv2Symbol = slv2_value_new_string(lv2World, sSymbol.c_str());
       port = slv2_plugin_get_port_by_symbol(lv2ThisPlugin, lv2Symbol);
       slv2_port_get_range(lv2ThisPlugin, port, &def, &min, &max);
-      m_ptr_BandArray[i].iType = (int) slv2_value_as_float(def);
+      m_ptr_BandArray[i].filter_type = (int) slv2_value_as_float(def);
       
       //Get Band Enabled
       sprintf (buffer, "filter%d_enable", i+1);
@@ -203,7 +203,7 @@ void EqParams::loadFromTtlFile(const char *uri)
     {
       m_ptr_BandArray[i].fGain = 0;
       m_ptr_BandArray[i].fQ = 2;
-      m_ptr_BandArray[i].iType = PEAK;
+      m_ptr_BandArray[i].filter_type = PEAK;
       m_ptr_BandArray[i].bIsEnabled = 0;
       m_ptr_BandArray[i].fFreq = cur_freq;
       
