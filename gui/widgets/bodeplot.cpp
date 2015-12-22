@@ -864,14 +864,14 @@ void PlotEQCurve::CalcBand_DigitalFilter(int bd_ix)
   m_fil.freq = m_filters[bd_ix]-> Freq;
   m_fil.q = m_filters[bd_ix]->Q;
   m_fil.is_enabled = 1;
-  m_fil.iType = m_filters[bd_ix]->fType;
+  m_fil.filter_type = m_filters[bd_ix]->fType;
   m_fil.fs = SampleRate;
   m_fil.freqInter = 1000.0f;
   m_fil.gainInter = 1000.0f;
   m_fil.QInter = 1000.0f;
   
   //Calc coefs
-  calcCoefs(&m_fil, m_fil.gain, m_fil.freq, m_fil.q, m_fil.iType, m_fil.is_enabled);
+  calcCoefs(&m_fil, m_fil.gain, m_fil.freq, m_fil.q, m_fil.filter_type, m_fil.is_enabled);
   
   //Digital filter magnitude response
   double w, A, B, C, D, sinW, cosW;

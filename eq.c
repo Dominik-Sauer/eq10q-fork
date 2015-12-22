@@ -260,7 +260,7 @@ static void runEQ_v2(LV2_Handle instance, uint32_t sample_count)
     if(dB2Lin(*(plugin_data->fBandGain[bd])) != plugin_data->filter[bd]->gain ||
 	*plugin_data->fBandFreq[bd] != plugin_data->filter[bd]->freq ||
 	*plugin_data->fBandParam[bd] != plugin_data->filter[bd]->q ||
-	((int)(*plugin_data->fBandType[bd])) != plugin_data->filter[bd]->iType ||
+	((int)(*plugin_data->fBandType[bd])) != plugin_data->filter[bd]->filter_type ||
 	((int)(*plugin_data->fBandEnabled[bd])) != plugin_data->filter[bd]->is_enabled)
     {
       recalcCoefs[bd] = 1;

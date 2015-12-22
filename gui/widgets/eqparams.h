@@ -34,7 +34,7 @@ class EqParams
       float fGain;
       float fFreq;
       float fQ;
-      FilterType iType;
+      FilterType filter_type;
       bool bIsEnabled;
     } EqBandStruct;
     
@@ -43,7 +43,7 @@ class EqParams
     void setBandGain(int iBand, float fGain);
     void setBandFreq(int iBand, float fFreq);
     void setBandQ(int iBand, float fQ);
-    void setBandType(int iBand, FilterType iType);
+    void setBandType(int iBand, FilterType filter_type);
     void setBandEnabled(int iBand, bool bIsEnabled);
     
     float getInputGain();
