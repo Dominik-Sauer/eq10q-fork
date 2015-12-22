@@ -23,7 +23,7 @@
 
 #include <iostream>
 #include <gtkmm/drawingarea.h>
-#include "filter.h"
+#include "../../filter_type.h"
 #include "../eq_defines.h"
 
 #define MIN_FREQ 18.0 
@@ -60,7 +60,7 @@ class PlotEQCurve : public Gtk::DrawingArea
     virtual void setBandGain(int bd_ix, float newGain);
     virtual void setBandFreq(int bd_ix, float newFreq);
     virtual void setBandQ(int bd_ix, float newQ);
-    virtual void setBandType(int bd_ix, int newType);
+    virtual void setBandType(int bd_ix, FilterType newType);
     virtual void setBandEnable(int bd_ix, bool bIsEnabled);
     virtual void setBypass(bool bypass);
     virtual void setSampleRate(double samplerate);

@@ -34,20 +34,7 @@ This file contains the filter definitions
   #define PI 3.1416
 #endif
 
-#define  F_NOT_SET 0
-#define  F_LPF_ORDER_1 1
-#define  F_LPF_ORDER_2 2
-#define  F_LPF_ORDER_3 3
-#define  F_LPF_ORDER_4 4
-#define  F_HPF_ORDER_1 5
-#define  F_HPF_ORDER_2 6
-#define  F_HPF_ORDER_3 7
-#define  F_HPF_ORDER_4 8
-#define  F_LOW_SHELF 9
-#define  F_HIGH_SHELF 10
-#define  F_PEAK 11
-#define  F_NOTCH 12
-#define  F_BAND_PASS 13
+#include "../filter_type.h"
 
 //Interpolation params
 #define FREQ_INTER_DEC_SECOND 30.0f
@@ -61,7 +48,7 @@ typedef struct Filter {
     double fs; //sample rate
     float gain, freq, q;
     int is_enabled;
-    int iType; //Filter type
+    FilterType iType; //Filter type
 
     //Interpolation Params
     float freqInter;
@@ -88,7 +75,7 @@ static inline Filter *FilterInit(double rate) {
     filter->freq = 100.0f;
     filter->q = 1.0f;
     filter->is_enabled = 0;
-    filter->iType = 0;
+    filter->iType = FILTER_TYPE_NOT_SET;
 
     //Interpolations
     filter->freqInter = pow(10.0f, FREQ_INTER_DEC_SECOND/(float)rate);
@@ -476,7 +463,7 @@ static inline void normalize_coefs( Filter* filter, Coefficients* p_coefficients
     filter->a1_2 = (p_coefficients->a1_2/p_coefficients->a1_0);
 }
 
-static inline void disable_filter( Filter* filter, int iType ) {
+static inline void disable_filter( Filter* filter, FilterType iType ) {
     filter->is_enabled = 0;
     filter->iType = iType;
 
@@ -487,50 +474,53 @@ static inline void disable_filter( Filter* filter, int iType ) {
     return;
 }
 
-static inline void compute_coefficients( Filter* filter, Coefficients* p_coefficients, int iType ){
+static inline void compute_coefficients( Filter* filter, Coefficients* p_coefficients, FilterType iType ){
     switch( iType ) {
-        case F_HPF_ORDER_1:
+        case HPF_ORDER_1:
             compute_HPF1_coefficients( filter, p_coefficients );
             break;
-        case F_HPF_ORDER_2:
+        case HPF_ORDER_2:
             compute_HPF2_coefficients( filter, p_coefficients );
             break;
-        case F_HPF_ORDER_3:
+        case HPF_ORDER_3:
             compute_HPF3_coefficients( filter, p_coefficients );
             break;
-        case F_HPF_ORDER_4:
+        case HPF_ORDER_4:
             compute_HPF4_coefficients( filter, p_coefficients );
             break;
 
-        case F_LPF_ORDER_1:
+        case LPF_ORDER_1:
             compute_LPF1_coefficients( filter, p_coefficients );
             break;
-        case F_LPF_ORDER_2:
+        case LPF_ORDER_2:
             compute_LPF2_coefficients( filter, p_coefficients );
             break;
-        case F_LPF_ORDER_3:
+        case LPF_ORDER_3:
             compute_LPF3_coefficients( filter, p_coefficients );
             break;
-        case F_LPF_ORDER_4:
+        case LPF_ORDER_4:
             compute_LPF4_coefficients( filter, p_coefficients );
             break;
 
-        case F_LOW_SHELF:
+        case LOW_SHELF:
             compute_LSH_coefficients( filter, p_coefficients );
             break;
-        case F_HIGH_SHELF:
+        case HIGH_SHELF:
             compute_HSH_coefficients( filter, p_coefficients );
             break;
 
-        case F_PEAK:
+        case PEAK:
             compute_PEAK_coefficients( filter, p_coefficients );
             break;
-        case F_NOTCH:
+        case NOTCH:
             compute_NOTCH_coefficients( filter, p_coefficients );
             break;
 
-        case F_BAND_PASS:
+        case BAND_PASS:
             compute_BPF_coefficients( filter, p_coefficients );
+            break;
+
+        default:
             break;
     }
 
@@ -538,7 +528,7 @@ static inline void compute_coefficients( Filter* filter, Coefficients* p_coeffic
 }
 
 //Compute filter coefficients
-static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ, int iType, int is_enabled) //p2 = GAIN p3 = Q
+static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ, FilterType iType, int is_enabled) //p2 = GAIN p3 = Q
 {   
     if( ! is_enabled ) {
         disable_filter( filter, iType );

@@ -309,7 +309,7 @@ void PlotEQCurve::resetCurve()
 
 void PlotEQCurve::ComputeFilter(int bd_ix)
 {  
-  if(m_filters[bd_ix]->fType != NOT_SET)
+  if(m_filters[bd_ix]->fType != FILTER_TYPE_NOT_SET)
   {
     CalcBand_DigitalFilter(bd_ix);
   }
@@ -347,9 +347,9 @@ void  PlotEQCurve::setBandQ(int bd_ix, float newQ)
   cueBandRedraws(bd_ix);
 }
 
-void  PlotEQCurve::setBandType(int bd_ix, int newType)
+void  PlotEQCurve::setBandType(int bd_ix, FilterType newType)
 {
-  m_filters[bd_ix]->fType = int2FilterType(newType);
+  m_filters[bd_ix]->fType = newType;
   cueBandRedraws(bd_ix);
 }
 

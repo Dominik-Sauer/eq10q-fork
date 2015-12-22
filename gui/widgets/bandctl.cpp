@@ -18,7 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "filter.h"
+#include "../../filter_type.h"
 #include "colors.h"
 #include "guiconstants.h"
 #include "bandctl.h"
@@ -60,7 +60,7 @@ m_bGlowBand(false)
   m_FreqBtn.units = "Hz";
   m_QBtn.units = "Q";
   
-  m_FilterType = int2FilterType(0.0f);
+  m_FilterType = FILTER_TYPE_NOT_SET;
   m_BandTitle = Glib::ustring::compose("Band %1", m_iBandNum + 1);
   m_Color  = Gdk::Color(bandColorLUT[m_iBandNum]);
   
@@ -185,7 +185,7 @@ void BandCtl::glowBand(bool glow)
 void BandCtl::loadTypeImg()
 {
    Glib::RefPtr<Gdk::Pixbuf> img_ptr;
-   
+
    switch(m_FilterType)
    {
      case HPF_ORDER_1:
@@ -260,7 +260,7 @@ void BandCtl::loadTypeImg()
        m_GainBtn.units = "dB";
      break;
      
-     case NOT_SET:
+     default:
       return;
      break; 
    }
@@ -323,7 +323,7 @@ void BandCtl::setQ(float fQ){
 
 void BandCtl::setFilterType(float fType)
 {
-  m_FilterType = int2FilterType(fType);
+  m_FilterType = (FilterType)fType;
   loadTypeImg();
   redraw();
 }
