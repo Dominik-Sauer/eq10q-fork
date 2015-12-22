@@ -1,36 +1,36 @@
-@prefix lv2:  <http://lv2plug.in/ns/lv2core#>.
-@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix lv2: <http://lv2plug.in/ns/lv2core#>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
 @prefix doap: <http://usefulinc.com/ns/doap#>.
 @prefix guiext: <http://lv2plug.in/ns/extensions/ui#>.
-@prefix atom:  <http://lv2plug.in/ns/ext/atom#> .
-@prefix urid:  <http://lv2plug.in/ns/ext/urid#> .
-@prefix rsz:     <http://lv2plug.in/ns/ext/resize-port#> .
+@prefix atom: <http://lv2plug.in/ns/ext/atom#>.
+@prefix urid: <http://lv2plug.in/ns/ext/urid#>.
+@prefix rsz: <http://lv2plug.in/ns/ext/resize-port#>.
 
 ##LV2 GUI extension
 <https://github.com/Dominik-Sauer/eq10q-fork/fbdm/gui>
-  a guiext:GtkUI;
-  guiext:binary <gui/fbdm_gui.so>;
-  guiext:requiredFeature guiext:makeResident, urid:map;
-  guiext:optionalFeature guiext:noUserResize.
+    a guiext:GtkUI;
+    guiext:binary <gui/fbdm_gui.so>;
+    guiext:requiredFeature guiext:makeResident, urid:map;
+    guiext:optionalFeature guiext:noUserResize.
 
 ##LV2 plugin binary
 <https://github.com/Dominik-Sauer/eq10q-fork/fbdm>
-  a lv2:Plugin, lv2:EQPlugin;
-  lv2:binary <fbdm.so>;
-  doap:name "FeedBack Destroyer Mono";
-  doap:license <http://usefulinc.com/doap/licenses/gpl>;
-  lv2:requiredFeature urid:map;
-  lv2:optionalFeature lv2:hardRtCapable;
-  
+    a lv2:Plugin, lv2:EQPlugin;
+    lv2:binary <fbdm.so>;
+    doap:name "FeedBack Destroyer Mono";
+    doap:license <http://usefulinc.com/doap/licenses/gpl>;
+    lv2:requiredFeature urid:map;
+    lv2:optionalFeature lv2:hardRtCapable;
+
 guiext:ui <https://github.com/Dominik-Sauer/eq10q-fork/fbdm/gui>;
 
 doap:maintainer [
-      foaf:name "Dominik Sauer";
-      foaf:homepage <https://github.com/Dominik-Sauer/eq10q-fork> ;
-      foaf:mbox <mailto:dominik.sauer@gmail.com> ;
-   ] ;
+    foaf:name "Dominik Sauer";
+    foaf:homepage <https://github.com/Dominik-Sauer/eq10q-fork>;
+    foaf:mbox <mailto:dominik.sauer@gmail.com>;
+];
 
-  lv2:port [
+lv2:port [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 0;
     lv2:symbol "bypass";
@@ -39,19 +39,15 @@ doap:maintainer [
     lv2:maximum 1;
     lv2:default 0;
     lv2:portProperty lv2:toggled;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 1;
     lv2:symbol "input_gain";
     lv2:name "Input Gain";
     lv2:minimum -20;
     lv2:maximum 20;
-    lv2:default 0;   
-  ],
-
-  [
+    lv2:default 0;
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 2;
     lv2:symbol "output_gain";
@@ -59,24 +55,20 @@ doap:maintainer [
     lv2:minimum -20;
     lv2:maximum 20;
     lv2:default 0;
-  ],
-
- [
+], [
     a lv2:AudioPort, lv2:InputPort;
     lv2:index 3;
     lv2:symbol "input";
     lv2:name "Input";
-  ],
-
-  [
+], [
     a lv2:AudioPort, lv2:OutputPort;
     lv2:index 4;
     lv2:symbol "output";
     lv2:name "Output";
-  ],
+],
 
- ##############GAIN PORTS#########################
- [
+##############GAIN PORTS#########################
+[
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 5;
     lv2:symbol "filter1_gain";
@@ -84,9 +76,7 @@ doap:maintainer [
     lv2:minimum -20;
     lv2:maximum 20;
     lv2:default 0;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 6;
     lv2:symbol "filter2_gain";
@@ -94,9 +84,7 @@ doap:maintainer [
     lv2:minimum -20;
     lv2:maximum 20;
     lv2:default 0;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 7;
     lv2:symbol "filter3_gain";
@@ -104,9 +92,7 @@ doap:maintainer [
     lv2:minimum -20;
     lv2:maximum 20;
     lv2:default 0;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 8;
     lv2:symbol "filter4_gain";
@@ -114,9 +100,7 @@ doap:maintainer [
     lv2:minimum -20;
     lv2:maximum 20;
     lv2:default 0;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 9;
     lv2:symbol "filter5_gain";
@@ -124,9 +108,7 @@ doap:maintainer [
     lv2:minimum -20;
     lv2:maximum 20;
     lv2:default 0;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 10;
     lv2:symbol "filter6_gain";
@@ -134,9 +116,7 @@ doap:maintainer [
     lv2:minimum -20;
     lv2:maximum 20;
     lv2:default 0;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 11;
     lv2:symbol "filter7_gain";
@@ -144,9 +124,7 @@ doap:maintainer [
     lv2:minimum -20;
     lv2:maximum 20;
     lv2:default 0;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 12;
     lv2:symbol "filter8_gain";
@@ -154,9 +132,7 @@ doap:maintainer [
     lv2:minimum -20;
     lv2:maximum 20;
     lv2:default 0;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 13;
     lv2:symbol "filter9_gain";
@@ -164,9 +140,7 @@ doap:maintainer [
     lv2:minimum -20;
     lv2:maximum 20;
     lv2:default 0;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 14;
     lv2:symbol "filter10_gain";
@@ -174,10 +148,10 @@ doap:maintainer [
     lv2:minimum -20;
     lv2:maximum 20;
     lv2:default 0;
-  ],
+],
 
 ###########FREQ PORTS########################
- [
+[
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 15;
     lv2:symbol "filter1_freq";
@@ -185,9 +159,7 @@ doap:maintainer [
     lv2:minimum 20;
     lv2:maximum 20000;
     lv2:default 30;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 16;
     lv2:symbol "filter2_freq";
@@ -195,9 +167,7 @@ doap:maintainer [
     lv2:minimum 20;
     lv2:maximum 20000;
     lv2:default 60;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 17;
     lv2:symbol "filter3_freq";
@@ -205,9 +175,7 @@ doap:maintainer [
     lv2:minimum 20;
     lv2:maximum 20000;
     lv2:default 120;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 18;
     lv2:symbol "filter4_freq";
@@ -215,9 +183,7 @@ doap:maintainer [
     lv2:minimum 20;
     lv2:maximum 20000;
     lv2:default 240;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 19;
     lv2:symbol "filter5_freq";
@@ -225,9 +191,7 @@ doap:maintainer [
     lv2:minimum 20;
     lv2:maximum 20000;
     lv2:default 480;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 20;
     lv2:symbol "filter6_freq";
@@ -235,9 +199,7 @@ doap:maintainer [
     lv2:minimum 20;
     lv2:maximum 20000;
     lv2:default 960;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 21;
     lv2:symbol "filter7_freq";
@@ -245,9 +207,7 @@ doap:maintainer [
     lv2:minimum 20;
     lv2:maximum 20000;
     lv2:default 1920;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 22;
     lv2:symbol "filter8_freq";
@@ -255,9 +215,7 @@ doap:maintainer [
     lv2:minimum 20;
     lv2:maximum 20000;
     lv2:default 3840;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 23;
     lv2:symbol "filter9_freq";
@@ -265,9 +223,7 @@ doap:maintainer [
     lv2:minimum 20;
     lv2:maximum 20000;
     lv2:default 7680;
-  ],
-
- [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 24;
     lv2:symbol "filter10_freq";
@@ -275,10 +231,10 @@ doap:maintainer [
     lv2:minimum 20;
     lv2:maximum 20000;
     lv2:default 15360;
-  ],
+    ],
 
 ################## Q PORTS #####################
-  [
+    [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 25;
     lv2:symbol "filter1_q";
@@ -286,9 +242,7 @@ doap:maintainer [
     lv2:minimum 0.1;
     lv2:maximum 16;
     lv2:default 0.7;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 26;
     lv2:symbol "filter2_q";
@@ -296,9 +250,7 @@ doap:maintainer [
     lv2:minimum 0.1;
     lv2:maximum 16;
     lv2:default 0.7;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 27;
     lv2:symbol "filter3_q";
@@ -306,9 +258,7 @@ doap:maintainer [
     lv2:minimum 0.1;
     lv2:maximum 16;
     lv2:default 2;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 28;
     lv2:symbol "filter4_q";
@@ -316,9 +266,7 @@ doap:maintainer [
     lv2:minimum 0.1;
     lv2:maximum 16;
     lv2:default 2;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 29;
     lv2:symbol "filter5_q";
@@ -326,9 +274,7 @@ doap:maintainer [
     lv2:minimum 0.1;
     lv2:maximum 16;
     lv2:default 2;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 30;
     lv2:symbol "filter6_q";
@@ -336,9 +282,7 @@ doap:maintainer [
     lv2:minimum 0.1;
     lv2:maximum 16;
     lv2:default 2;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 31;
     lv2:symbol "filter7_q";
@@ -346,9 +290,7 @@ doap:maintainer [
     lv2:minimum 0.1;
     lv2:maximum 16;
     lv2:default 2;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 32;
     lv2:symbol "filter8_q";
@@ -356,9 +298,7 @@ doap:maintainer [
     lv2:minimum 0.1;
     lv2:maximum 16;
     lv2:default 2;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 33;
     lv2:symbol "filter9_q";
@@ -366,9 +306,7 @@ doap:maintainer [
     lv2:minimum 0.1;
     lv2:maximum 16;
     lv2:default 0.7;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 34;
     lv2:symbol "filter10_q";
@@ -376,10 +314,10 @@ doap:maintainer [
     lv2:minimum 0.1;
     lv2:maximum 16;
     lv2:default 0.7;
-  ],
+],
 
 ######### TYPE PORTS ####################
-  [
+[
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 35;
     lv2:symbol "filter1_type";
@@ -388,9 +326,7 @@ doap:maintainer [
     lv2:maximum 12;
     lv2:default 6;
     lv2:portProperty lv2:integer;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 36;
     lv2:symbol "filter2_type";
@@ -399,9 +335,7 @@ doap:maintainer [
     lv2:maximum 12;
     lv2:default 9;
     lv2:portProperty lv2:integer;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 37;
     lv2:symbol "filter3_type";
@@ -410,9 +344,7 @@ doap:maintainer [
     lv2:maximum 12;
     lv2:default 11;
     lv2:portProperty lv2:integer;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 38;
     lv2:symbol "filter4_type";
@@ -421,9 +353,7 @@ doap:maintainer [
     lv2:maximum 12;
     lv2:default 11;
     lv2:portProperty lv2:integer;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 39;
     lv2:symbol "filter5_type";
@@ -432,9 +362,7 @@ doap:maintainer [
     lv2:maximum 12;
     lv2:default 11;
     lv2:portProperty lv2:integer;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 40;
     lv2:symbol "filter6_type";
@@ -443,9 +371,7 @@ doap:maintainer [
     lv2:maximum 12;
     lv2:default 11;
     lv2:portProperty lv2:integer;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 41;
     lv2:symbol "filter7_type";
@@ -454,9 +380,7 @@ doap:maintainer [
     lv2:maximum 12;
     lv2:default 11;
     lv2:portProperty lv2:integer;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 42;
     lv2:symbol "filter8_type";
@@ -465,9 +389,7 @@ doap:maintainer [
     lv2:maximum 12;
     lv2:default 11;
     lv2:portProperty lv2:integer;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 43;
     lv2:symbol "filter9_type";
@@ -476,9 +398,7 @@ doap:maintainer [
     lv2:maximum 12;
     lv2:default 10;
     lv2:portProperty lv2:integer;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 44;
     lv2:symbol "filter10_type";
@@ -487,10 +407,10 @@ doap:maintainer [
     lv2:maximum 12;
     lv2:default 2;
     lv2:portProperty lv2:integer;
-  ],
+],
 
 ################# ENABLE PORTS ###################
-  [
+[
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 45;
     lv2:symbol "filter1_enable";
@@ -499,9 +419,7 @@ doap:maintainer [
     lv2:maximum 1;
     lv2:default 0;
     lv2:portProperty lv2:toggled;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 46;
     lv2:symbol "filter2_enable";
@@ -510,9 +428,7 @@ doap:maintainer [
     lv2:maximum 1;
     lv2:default 0;
     lv2:portProperty lv2:toggled;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 47;
     lv2:symbol "filter3_enable";
@@ -521,9 +437,7 @@ doap:maintainer [
     lv2:maximum 1;
     lv2:default 0;
     lv2:portProperty lv2:toggled;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 48;
     lv2:symbol "filter4_enable";
@@ -532,9 +446,7 @@ doap:maintainer [
     lv2:maximum 1;
     lv2:default 0;
     lv2:portProperty lv2:toggled;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 49;
     lv2:symbol "filter5_enable";
@@ -543,9 +455,7 @@ doap:maintainer [
     lv2:maximum 1;
     lv2:default 0;
     lv2:portProperty lv2:toggled;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 50;
     lv2:symbol "filter6_enable";
@@ -554,9 +464,7 @@ doap:maintainer [
     lv2:maximum 1;
     lv2:default 0;
     lv2:portProperty lv2:toggled;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 51;
     lv2:symbol "filter7_enable";
@@ -565,9 +473,7 @@ doap:maintainer [
     lv2:maximum 1;
     lv2:default 0;
     lv2:portProperty lv2:toggled;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 52;
     lv2:symbol "filter8_enable";
@@ -576,9 +482,7 @@ doap:maintainer [
     lv2:maximum 1;
     lv2:default 0;
     lv2:portProperty lv2:toggled;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 53;
     lv2:symbol "filter9_enable";
@@ -587,9 +491,7 @@ doap:maintainer [
     lv2:maximum 1;
     lv2:default 0;
     lv2:portProperty lv2:toggled;
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:InputPort, lv2:integer;
     lv2:index 54;
     lv2:symbol "filter10_enable";
@@ -598,39 +500,31 @@ doap:maintainer [
     lv2:maximum 1;
     lv2:default 0;
     lv2:portProperty lv2:toggled;
-  ],
+],
 
 ############## VU PORTS ############################
-  [
+[
     a lv2:ControlPort, lv2:OutputPort;
     lv2:index 55;
     lv2:symbol "in_vu_ctl";
     lv2:name "In Vu CTL";
-  ],
-
-  [
+], [
     a lv2:ControlPort, lv2:OutputPort;
     lv2:index 56;
     lv2:symbol "out_vu_ctl";
     lv2:name "Out VU CTL";
-  ],
-  
-  [
-    a lv2:OutputPort ,
-            atom:AtomPort ;
-    atom:bufferType atom:Sequence ;
-    lv2:index 57 ;
-    lv2:symbol "notify" ;
-    lv2:name "Notify" ;
+], [
+    a lv2:OutputPort, atom:AtomPort;
+    atom:bufferType atom:Sequence;
+    lv2:index 57;
+    lv2:symbol "notify";
+    lv2:name "Notify";
     rsz:minimumSize 73000;
-  ],
-  
-  [
-    a atom:AtomPort ,
-            lv2:InputPort ;
-    atom:bufferType atom:Sequence ;
-    lv2:designation lv2:control ;
-    lv2:index 58 ;
-    lv2:symbol "control" ;
+], [
+    a atom:AtomPort, lv2:InputPort;
+    atom:bufferType atom:Sequence;
+    lv2:designation lv2:control;
+    lv2:index 58;
+    lv2:symbol "control";
     lv2:name "Control"
-  ].
+].
