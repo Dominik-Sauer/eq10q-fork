@@ -28,7 +28,7 @@ set( Eq_Bands_Count 10)
 set( Eq_Uri  "\"https://github.com/Dominik-Sauer/eq10q-fork/fbdm\"")
 configure_file("${PROJECT_SOURCE_DIR}/eq.c" "${PROJECT_SOURCE_DIR}/fbdm.c")
 add_library(fbdm SHARED fbdm.c)
-target_link_libraries( fbdm  lib_filter lib_vumeter m fftw3)
+target_link_libraries( fbdm lib_fft lib_filter lib_vumeter m fftw3)
 
 #remove the lib prefix to all generated .so files
 set_target_properties(fbdm PROPERTIES PREFIX "")

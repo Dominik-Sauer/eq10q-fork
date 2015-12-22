@@ -883,7 +883,7 @@ void PlotEQCurve::CalcBand_DigitalFilter(int bd_ix)
   
   for(int i=0; i<CURVE_NUM_OF_POINTS; i++)
   {
-    w=2*PI*f[i] / m_fil.fs; 
+    w=2*M_PI*f[i] / m_fil.fs;
     sinW = sin(w);
     cosW = cos(w);
     A = m_fil.b1 + AK*cosW;
@@ -904,7 +904,7 @@ void PlotEQCurve::CalcBand_DigitalFilter(int bd_ix)
     
     for(int i=0; i<CURVE_NUM_OF_POINTS; i++)
     {
-      w=2*PI*f[i] / m_fil.fs; 
+      w=2*M_PI*f[i] / m_fil.fs;
       sinW = sin(w);
       cosW = cos(w);
       A = m_fil.b1_1 + AK*cosW;

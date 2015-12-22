@@ -30,8 +30,8 @@ This file contains the filter definitions
 //#include <stdio.h>
 
 //Constants definitions
-#ifndef PI
-  #define PI 3.1416
+#ifndef M_PI
+    #define M_PI (3.14159265358979323846)
 #endif
 
 #include "../filter_type.h"
@@ -172,7 +172,7 @@ static inline void interpolate_q( Filter* filter, float fQ ) {
 static inline void compute_HPF1_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = tanf( PI * ( filter->freq / filter->fs ) );
+    double w0 = tanf( M_PI * ( filter->freq / filter->fs ) );
 
     p_coefficients->b0 = 1.0;
     p_coefficients->b1 = -1.0;
@@ -187,7 +187,7 @@ static inline void compute_HPF1_coefficients( Filter* filter, Coefficients* p_co
 static inline void compute_LPF1_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = tanf( PI * ( filter->freq / filter->fs ) );
+    double w0 = tanf( M_PI * ( filter->freq / filter->fs ) );
 
     p_coefficients->b0 = w0;
     p_coefficients->b1 = w0;
@@ -202,7 +202,7 @@ static inline void compute_LPF1_coefficients( Filter* filter, Coefficients* p_co
 static inline void compute_HPF2_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = 2 * PI * ( filter->freq / filter->fs );
+    double w0 = 2 * M_PI * ( filter->freq / filter->fs );
     double alpha = sinf( w0 ) / ( 2 * filter->q );
     double cosf_w0 = cosf( w0 );
 
@@ -219,7 +219,7 @@ static inline void compute_HPF2_coefficients( Filter* filter, Coefficients* p_co
 static inline void compute_LPF2_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = 2 * PI * ( filter->freq / filter->fs );
+    double w0 = 2 * M_PI * ( filter->freq / filter->fs );
     double alpha = sinf( w0 ) / ( 2 * filter->q );
     double cosf_w0 = cosf( w0 );
 
@@ -236,7 +236,7 @@ static inline void compute_LPF2_coefficients( Filter* filter, Coefficients* p_co
 static inline void compute_HPF3_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 1;
 
-    double w0 = 2 * PI * ( filter->freq / filter->fs );
+    double w0 = 2 * M_PI * ( filter->freq / filter->fs );
     double alpha = sinf( w0 ) / ( 2 * filter->q );
     double cosf_w0 = cosf( w0 );
 
@@ -262,7 +262,7 @@ static inline void compute_HPF3_coefficients( Filter* filter, Coefficients* p_co
 static inline void compute_LPF3_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 1;
 
-    double w0 = 2 * PI * ( filter->freq / filter->fs );
+    double w0 = 2 * M_PI * ( filter->freq / filter->fs );
     double alpha = sinf( w0 ) / ( 2 * filter->q );
     double cosf_w0 = cosf( w0 );
 
@@ -300,7 +300,7 @@ static inline void compute_LPF4_coefficients( Filter* filter, Coefficients* p_co
 static inline void compute_LSH_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = 2 * PI * ( filter->freq / filter->fs );
+    double w0 = 2 * M_PI * ( filter->freq / filter->fs );
     double A = sqrtf( filter->gain );
     double sqrtf_A = sqrtf( A );
     double alpha = sinf( w0 ) / ( 2 * filter->q );
@@ -320,7 +320,7 @@ static inline void compute_LSH_coefficients( Filter* filter, Coefficients* p_coe
 static inline void compute_HSH_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = 2 * PI * ( filter->freq / filter->fs );
+    double w0 = 2 * M_PI * ( filter->freq / filter->fs );
     double A = sqrtf( filter->gain );
     double sqrtf_A = sqrtf( A );
     double alpha = sinf( w0 ) / ( 2 * filter->q );
@@ -340,7 +340,7 @@ static inline void compute_HSH_coefficients( Filter* filter, Coefficients* p_coe
 static inline void compute_NOTCH_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = 2 * PI * ( filter->freq / filter->fs );
+    double w0 = 2 * M_PI * ( filter->freq / filter->fs );
     double alpha = sinf( w0 ) / ( 2*filter->q );
     double cosf_w0 = cosf( w0 );
 
@@ -370,11 +370,11 @@ static inline void compute_PEAK_NOGAIN_coefficients( Filter* filter, Coefficient
 static inline void compute_PEAK_GAIN_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = 2 * PI * ( filter->freq / filter->fs );
+    double w0 = 2 * M_PI * ( filter->freq / filter->fs );
 
     double AA = sqrtf( filter->gain );
     double A2 = filter->gain;
-    double PI2 = PI * PI;
+    double PI2 = M_PI * M_PI;
     double Q2 = filter->q * filter->q;
     double w02 = w0 * w0;
     double w02_PI22 = (w02 - PI2)*(w02 - PI2);
@@ -434,7 +434,7 @@ static inline void compute_PEAK_coefficients( Filter* filter, Coefficients* p_co
 }
 
 static inline void compute_BPF_coefficients( Filter* filter, Coefficients* p_coefficients ) {
-    double w0 = 2 * PI * ( filter->freq / filter->fs );
+    double w0 = 2 * M_PI * ( filter->freq / filter->fs );
     double alpha = sinf( w0 ) / ( 2*filter->q );
     double cosf_w0 = cosf( w0 );
 
