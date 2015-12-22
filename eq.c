@@ -121,7 +121,7 @@ static void connectPortEQ(LV2_Handle instance, uint32_t port, void *data)
     case INPUT_PORT:
       plugin->fInput = data;
     break;
-    
+
     case OUTPUT_PORT:
       plugin->fOutput = data;
     break;
@@ -220,6 +220,61 @@ static LV2_Handle instantiateEQ(const LV2_Descriptor *descriptor, double s_rate,
         return 0;
 }
 
+#define _is_fft_on_requested( plugin_data, obj )        ( obj->body.otype == plugin_data->uris.atom_fft_on )
+#define _is_fft_off_requested( plugin_data, obj )       ( obj->body.otype == plugin_data->uris.atom_fft_off )
+#define _is_sample_rate_requested( plugin_data, obj )   ( obj->body.otype == plugin_data->uris.atom_sample_rate_request )
+
+static inline void _handle_control_event ( EQ *plugin_data, const LV2_Atom_Event *atom_event ) {
+    if ( atom_event->body.type != plugin_data->uris.atom_Object )
+        return;
+
+    const LV2_Atom_Object* obj = (const LV2_Atom_Object*)&atom_event->body;
+
+    if ( _is_fft_on_requested( plugin_data, obj ) ) {
+        plugin_data->is_fft_on = 1;
+        return;
+    }
+
+    if( _is_fft_off_requested( plugin_data, obj ) ) {
+        plugin_data->is_fft_on = 0;
+        reset_FFT( &plugin_data->fft1, 0 );
+        return;
+    }
+
+    if( _is_sample_rate_requested( plugin_data, obj ) ){
+        //Send sample rate
+        LV2_Atom_Forge_Frame frameSR;
+        lv2_atom_forge_frame_time(&plugin_data->forge, 0);
+        lv2_atom_forge_object( &plugin_data->forge, &frameSR, 0, plugin_data->uris.atom_sample_rate_response);
+        lv2_atom_forge_key(&plugin_data->forge, plugin_data->uris.atom_sample_rate_key);
+        lv2_atom_forge_double(&plugin_data->forge, plugin_data->sampleRate);
+        lv2_atom_forge_pop(&plugin_data->forge, &frameSR);
+
+        // Close off sequence
+        lv2_atom_forge_pop(&plugin_data->forge, &plugin_data->notify_frame);
+    }
+}
+
+static inline void _handle_control_events ( EQ *plugin_data ) {
+    if( ! plugin_data->control_port )
+        return;
+
+    const LV2_Atom_Event* atom_event
+        = lv2_atom_sequence_begin( &(plugin_data->control_port)->body );
+
+    while(
+        ! lv2_atom_sequence_is_end(
+            &plugin_data->control_port->body,
+            plugin_data->control_port->atom.size,
+            atom_event
+        )
+    ) {
+        _handle_control_event( plugin_data, atom_event );
+
+        atom_event = lv2_atom_sequence_next( atom_event );
+    }
+}
+
 static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     EQ *plugin_data = (EQ *)instance;
 
@@ -262,42 +317,7 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     }
 
     //Read input Atom control port (Data from GUI)
-    if( plugin_data->control_port ) {
-        for(
-            const LV2_Atom_Event* atom_event
-                = lv2_atom_sequence_begin( &(plugin_data->control_port)->body );
-            !lv2_atom_sequence_is_end(
-                &plugin_data->control_port->body,
-                plugin_data->control_port->atom.size,
-                atom_event
-            );
-            atom_event = lv2_atom_sequence_next( atom_event )
-        ) {
-            // If the event is an atom:Object
-            if ( atom_event->body.type == plugin_data->uris.atom_Object ) {
-                const LV2_Atom_Object* obj = (const LV2_Atom_Object*)&atom_event->body;
-                if ( obj->body.otype == plugin_data->uris.atom_fft_on ) {
-                    plugin_data->is_fft_on = 1;
-                }
-                else if( obj->body.otype == plugin_data->uris.atom_fft_off ) {
-                    plugin_data->is_fft_on = 0;
-                    reset_FFT( &plugin_data->fft1, 0 );
-                }
-                else if( obj->body.otype == plugin_data->uris.atom_sample_rate_request ) {
-                    //Send sample rate
-                    LV2_Atom_Forge_Frame frameSR;
-                    lv2_atom_forge_frame_time(&plugin_data->forge, 0);
-                    lv2_atom_forge_object( &plugin_data->forge, &frameSR, 0, plugin_data->uris.atom_sample_rate_response);
-                    lv2_atom_forge_key(&plugin_data->forge, plugin_data->uris.atom_sample_rate_key);
-                    lv2_atom_forge_double(&plugin_data->forge, plugin_data->sampleRate);
-                    lv2_atom_forge_pop(&plugin_data->forge, &frameSR);
-
-                    // Close off sequence
-                    lv2_atom_forge_pop(&plugin_data->forge, &plugin_data->notify_frame);
-                }
-            }
-        }
-    }
+    _handle_control_events( plugin_data );
 
     int should_send_fft = 0;
 
