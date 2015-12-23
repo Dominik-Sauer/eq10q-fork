@@ -186,125 +186,125 @@ static void connectPortEQ(LV2_Handle instance, uint32_t port, void *data)
 
 static LV2_Handle instantiateEQ(const LV2_Descriptor *descriptor, double s_rate, const char *path, const LV2_Feature *const * features)
 {
-    EQ *plugin_data = (EQ *)malloc( sizeof(EQ) );
-    plugin_data->sampleRate = s_rate;
+    EQ *plugin = (EQ *)malloc( sizeof(EQ) );
+    plugin->sampleRate = s_rate;
 
     for( int i = 0; i < NUM_BANDS; i++ ) {
-        plugin_data->filter[i] = FilterInit(s_rate);
-        flushBuffers(&plugin_data->buf[i]);
+        plugin->filter[i] = FilterInit(s_rate);
+        flushBuffers(&plugin->buf[i]);
     }
 
-    plugin_data->InputVu = VuInit(s_rate);
-    plugin_data->OutputVu = VuInit(s_rate);
+    plugin->InputVu = VuInit(s_rate);
+    plugin->OutputVu = VuInit(s_rate);
 
     for (int i = 0; features[i]; i++ ) {
         if( !strcmp( features[i]->URI, LV2_URID__map ) )
-            plugin_data->map = (LV2_URID_Map*)features[i]->data;
+            plugin->map = (LV2_URID_Map*)features[i]->data;
     }
 
-    if ( !plugin_data->map ) {
+    if ( !plugin->map ) {
         printf("EQ10Q Error: Host does not support urid:map\n");
         goto fail;
     }
 
-    map_eq10q_uris( plugin_data->map, &plugin_data->uris );
-    lv2_atom_forge_init( &plugin_data->forge, plugin_data->map );
+    map_eq10q_uris( plugin->map, &plugin->uris );
+    lv2_atom_forge_init( &plugin->forge, plugin->map );
 
-    initialize_FFT( &plugin_data->fft1, FFT_N, 0 );
-    plugin_data->is_fft_on = 0;
+    initialize_FFT( &plugin->fft1, FFT_N, 0 );
+    plugin->is_fft_on = 0;
 
-    return (LV2_Handle)plugin_data;
+    return (LV2_Handle)plugin;
 
     fail:
-        free( plugin_data );
+        free( plugin );
         return 0;
 }
 
-#define _is_fft_on_requested( plugin_data, obj )        ( obj->body.otype == plugin_data->uris.atom_fft_on )
-#define _is_fft_off_requested( plugin_data, obj )       ( obj->body.otype == plugin_data->uris.atom_fft_off )
-#define _is_sample_rate_requested( plugin_data, obj )   ( obj->body.otype == plugin_data->uris.atom_sample_rate_request )
+#define _is_fft_on_requested( plugin, obj )        ( obj->body.otype == plugin->uris.atom_fft_on )
+#define _is_fft_off_requested( plugin, obj )       ( obj->body.otype == plugin->uris.atom_fft_off )
+#define _is_sample_rate_requested( plugin, obj )   ( obj->body.otype == plugin->uris.atom_sample_rate_request )
 
-static inline void _handle_control_event ( EQ *plugin_data, const LV2_Atom_Event *atom_event ) {
-    if ( atom_event->body.type != plugin_data->uris.atom_Object )
+static inline void _handle_control_event ( EQ *plugin, const LV2_Atom_Event *atom_event ) {
+    if ( atom_event->body.type != plugin->uris.atom_Object )
         return;
 
     const LV2_Atom_Object* obj = (const LV2_Atom_Object*)&atom_event->body;
 
-    if ( _is_fft_on_requested( plugin_data, obj ) ) {
-        plugin_data->is_fft_on = 1;
+    if ( _is_fft_on_requested( plugin, obj ) ) {
+        plugin->is_fft_on = 1;
         return;
     }
 
-    if( _is_fft_off_requested( plugin_data, obj ) ) {
-        plugin_data->is_fft_on = 0;
-        reset_FFT( &plugin_data->fft1, 0 );
+    if( _is_fft_off_requested( plugin, obj ) ) {
+        plugin->is_fft_on = 0;
+        reset_FFT( &plugin->fft1, 0 );
         return;
     }
 
-    if( _is_sample_rate_requested( plugin_data, obj ) ){
+    if( _is_sample_rate_requested( plugin, obj ) ){
         //Send sample rate
         LV2_Atom_Forge_Frame frameSR;
-        lv2_atom_forge_frame_time(&plugin_data->forge, 0);
-        lv2_atom_forge_object( &plugin_data->forge, &frameSR, 0, plugin_data->uris.atom_sample_rate_response);
-        lv2_atom_forge_key(&plugin_data->forge, plugin_data->uris.atom_sample_rate_key);
-        lv2_atom_forge_double(&plugin_data->forge, plugin_data->sampleRate);
-        lv2_atom_forge_pop(&plugin_data->forge, &frameSR);
+        lv2_atom_forge_frame_time(&plugin->forge, 0);
+        lv2_atom_forge_object( &plugin->forge, &frameSR, 0, plugin->uris.atom_sample_rate_response);
+        lv2_atom_forge_key(&plugin->forge, plugin->uris.atom_sample_rate_key);
+        lv2_atom_forge_double(&plugin->forge, plugin->sampleRate);
+        lv2_atom_forge_pop(&plugin->forge, &frameSR);
 
         // Close off sequence
-        lv2_atom_forge_pop(&plugin_data->forge, &plugin_data->notify_frame);
+        lv2_atom_forge_pop(&plugin->forge, &plugin->notify_frame);
     }
 }
 
-static inline void _handle_control_events ( EQ *plugin_data ) {
-    if( ! plugin_data->control_port )
+static inline void _handle_control_events ( EQ *plugin ) {
+    if( ! plugin->control_port )
         return;
 
     const LV2_Atom_Event* atom_event
-        = lv2_atom_sequence_begin( &(plugin_data->control_port)->body );
+        = lv2_atom_sequence_begin( &(plugin->control_port)->body );
 
     while(
         ! lv2_atom_sequence_is_end(
-            &plugin_data->control_port->body,
-            plugin_data->control_port->atom.size,
+            &plugin->control_port->body,
+            plugin->control_port->atom.size,
             atom_event
         )
     ) {
-        _handle_control_event( plugin_data, atom_event );
+        _handle_control_event( plugin, atom_event );
 
         atom_event = lv2_atom_sequence_next( atom_event );
     }
 }
 
-static inline void _send_fft ( EQ *plugin_data ) {
+static inline void _send_fft ( EQ *plugin ) {
     LV2_Atom_Forge_Frame frameFft;
-    lv2_atom_forge_frame_time(&plugin_data->forge, 0);
-    lv2_atom_forge_object( &plugin_data->forge, &frameFft, 0, plugin_data->uris.atom_fft_data_event);
-    lv2_atom_forge_key(&plugin_data->forge, plugin_data->uris.atom_fft_data_key);
+    lv2_atom_forge_frame_time(&plugin->forge, 0);
+    lv2_atom_forge_object( &plugin->forge, &frameFft, 0, plugin->uris.atom_fft_data_event);
+    lv2_atom_forge_key(&plugin->forge, plugin->uris.atom_fft_data_key);
     lv2_atom_forge_vector(
-        &plugin_data->forge,
+        &plugin->forge,
         sizeof(double),
-        plugin_data->uris.atom_Double,
-        plugin_data->fft1.half_size,
-        plugin_data->fft1.frequency_samples
+        plugin->uris.atom_Double,
+        plugin->fft1.half_size,
+        plugin->fft1.frequency_samples
     );
-    lv2_atom_forge_pop(&plugin_data->forge, &frameFft);
+    lv2_atom_forge_pop(&plugin->forge, &frameFft);
 
     // Close off sequence
-    lv2_atom_forge_pop(&plugin_data->forge, &plugin_data->notify_frame);
+    lv2_atom_forge_pop(&plugin->forge, &plugin->notify_frame);
 }
 
 static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
-    EQ *plugin_data = (EQ *)instance;
+    EQ *plugin = (EQ *)instance;
 
     //Get values of control ports
-    const int iBypass = *(plugin_data->fBypass) > 0.0f ? 1 : 0;
-    const float fInGain = dB2Lin(*(plugin_data->fInGain));
-    const float fOutGain = dB2Lin(*(plugin_data->fOutGain));
+    const int iBypass = *(plugin->fBypass) > 0.0f ? 1 : 0;
+    const float fInGain = dB2Lin(*(plugin->fInGain));
+    const float fOutGain = dB2Lin(*(plugin->fOutGain));
 
     //Set up forge to write directly to notify output port.
-    const uint32_t notify_capacity = plugin_data->notify_port->atom.size;
-    lv2_atom_forge_set_buffer(&plugin_data->forge, (uint8_t*)plugin_data->notify_port, notify_capacity);
-    lv2_atom_forge_sequence_head(&plugin_data->forge, &plugin_data->notify_frame, 0);
+    const uint32_t notify_capacity = plugin->notify_port->atom.size;
+    lv2_atom_forge_set_buffer(&plugin->forge, (uint8_t*)plugin->notify_port, notify_capacity);
+    lv2_atom_forge_sequence_head(&plugin->forge, &plugin->notify_frame, 0);
     //printf("Notify port size %d\n", notify_capacity);
 
     //Interpolation coefs force to recompute
@@ -317,15 +317,15 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     for(int band = 0; band<NUM_BANDS; band++)
     {
         if(
-            dB2Lin(*(plugin_data->fBandGain[band])) != plugin_data->filter[band]->gain
+            dB2Lin(*(plugin->fBandGain[band])) != plugin->filter[band]->gain
             ||
-            *plugin_data->fBandFreq[band] != plugin_data->filter[band]->freq
+            *plugin->fBandFreq[band] != plugin->filter[band]->freq
             ||
-            *plugin_data->fBandParam[band] != plugin_data->filter[band]->q
+            *plugin->fBandParam[band] != plugin->filter[band]->q
             ||
-            ((int)(*plugin_data->fBandType[band])) != plugin_data->filter[band]->filter_type
+            ((int)(*plugin->fBandType[band])) != plugin->filter[band]->filter_type
             ||
-            ((int)(*plugin_data->fBandEnabled[band])) != plugin_data->filter[band]->is_enabled
+            ((int)(*plugin->fBandEnabled[band])) != plugin->filter[band]->is_enabled
         ) {
             recalcCoefs[band] = 1;
             forceRecalcCoefs = 1;
@@ -335,58 +335,58 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     }
 
     //Read input Atom control port (Data from GUI)
-    _handle_control_events( plugin_data );
+    _handle_control_events( plugin );
 
     int fft_is_ready = 0;
 
     //Compute the filter
     for ( int current_sample_index = 0; current_sample_index < sample_count; current_sample_index++) {
-        current_sample = (double)plugin_data->fInput[current_sample_index];
+        current_sample = (double)plugin->fInput[current_sample_index];
         DENORMAL_TO_ZERO(current_sample);
         current_sample *= fInGain;
 
-        SetSample(plugin_data->InputVu, current_sample);
+        SetSample(plugin->InputVu, current_sample);
 
         //Process every band
         if(!iBypass) {
-            if(plugin_data->is_fft_on)
-                fft_is_ready = add_sample_and_maybe_compute_FFT( &plugin_data->fft1, current_sample );
+            if(plugin->is_fft_on)
+                fft_is_ready = add_sample_and_maybe_compute_FFT( &plugin->fft1, current_sample );
 
             //Coefs Interpolation
             if( forceRecalcCoefs ) {
                 for( int band = 0; band < NUM_BANDS; band++ ) {
                     if(recalcCoefs[band])
-                        calcCoefs(plugin_data->filter[band],
-                            dB2Lin(*(plugin_data->fBandGain[band])),
-                            *plugin_data->fBandFreq[band],
-                            *plugin_data->fBandParam[band],
-                            (int)(*plugin_data->fBandType[band]),
-                            (int)(*plugin_data->fBandEnabled[band])
+                        calcCoefs(plugin->filter[band],
+                            dB2Lin(*(plugin->fBandGain[band])),
+                            *plugin->fBandFreq[band],
+                            *plugin->fBandParam[band],
+                            (int)(*plugin->fBandType[band]),
+                            (int)(*plugin->fBandEnabled[band])
                         );
                 }
             }
 
             for( int band = 0; band < NUM_BANDS; band++ )
                 current_sample = computeFilter(
-                    plugin_data->filter[band],
-                    &plugin_data->buf[band],
+                    plugin->filter[band],
+                    &plugin->buf[band],
                     current_sample
                 );
 
         }
 
         current_sample *= fOutGain;
-        SetSample(plugin_data->OutputVu, current_sample);
+        SetSample(plugin->OutputVu, current_sample);
 
-        plugin_data->fOutput[current_sample_index] = (float)current_sample;
+        plugin->fOutput[current_sample_index] = (float)current_sample;
     }
 
     if (fft_is_ready)
-        _send_fft( plugin_data );
+        _send_fft( plugin );
 
     //Update VU ports
-    *( plugin_data->fVuIn ) = ComputeVu(plugin_data->InputVu, sample_count);
-    *( plugin_data->fVuOut ) = ComputeVu(plugin_data->OutputVu, sample_count);
+    *( plugin->fVuIn ) = ComputeVu(plugin->InputVu, sample_count);
+    *( plugin->fVuOut ) = ComputeVu(plugin->OutputVu, sample_count);
 }
 
 static const LV2_Descriptor eqDescriptor = {
