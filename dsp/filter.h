@@ -145,9 +145,6 @@ static inline void interpolate_freq( Filter* filter, float fFreq ) {
 }
 
 static inline void interpolate_gain( Filter* filter, float fGain ) {
-    filter->gain = fGain;
-    return;
-
     float err = fGain - filter->gain;
 
     filter->gain
