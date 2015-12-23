@@ -341,15 +341,20 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     lv2_atom_forge_sequence_head(&plugin->forge, &plugin->notify_frame, 0);
     //printf("Notify port size %d\n", notify_capacity);
 
-    //Interpolation coefs force to recompute
-    int coefs_changed[NUM_BANDS];
-
     double current_sample;
 
-    //Read EQ Ports and mark to recompute if changed
+    //Read EQ Ports and recompute if changed
     for(int band = 0; band<NUM_BANDS; band++)
     {
-        coefs_changed[band] = _did_filter_params_change( plugin, band );
+        if( _did_filter_params_change( plugin, band ) ) {
+            calcCoefs(plugin->filter[band],
+                dB2Lin(*(plugin->fBandGain[band])),
+                *plugin->fBandFreq[band],
+                *plugin->fBandParam[band],
+                (int)(*plugin->fBandType[band]),
+                (int)(*plugin->fBandEnabled[band])
+            );
+        };
     }
 
     //Read input Atom control port (Data from GUI)
@@ -371,20 +376,8 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
                 fft_is_ready = add_sample_and_maybe_compute_FFT( &plugin->fft1, current_sample );
 
             for( int band = 0; band < NUM_BANDS; band++ ) {
-                if( ! (int)(*plugin->fBandEnabled[band]) )
+                if( ! plugin->filter[band]->is_enabled )
                     continue;
-
-                if( coefs_changed[band] ) {
-                    calcCoefs(plugin->filter[band],
-                        dB2Lin(*(plugin->fBandGain[band])),
-                        *plugin->fBandFreq[band],
-                        *plugin->fBandParam[band],
-                        (int)(*plugin->fBandType[band]),
-                        (int)(*plugin->fBandEnabled[band])
-                    );
-
-                    coefs_changed[band] = 0;
-                };
 
                 current_sample = computeFilter(
                     plugin->filter[band],
