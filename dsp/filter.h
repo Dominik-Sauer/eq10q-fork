@@ -558,43 +558,48 @@ static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ,
 
 #define DENORMAL_TO_ZERO(x) if (fabs(x) < (1e-300)) x = 0.0; //Min float is 1.1754943e-38 (Min double is 2.23×10−308)
 
-//Compute filter
-static inline  void computeFilter(Filter *filter, Buffers *buf, double *inputSample)
+static inline double computeFilter(Filter *filter, Buffers *buf, double sample)
 {
-  //Process 1, 2 orders
-  //w(n)=x(n)-a1*w(n-1)-a2*w(n-2)
-  buf->buf_0 = (*inputSample)-filter->a1*buf->buf_1-filter->a2*buf->buf_2;
+    //Process 1, 2 orders
 
-  
-  /*
-  //Denomar hard TEST
-  static unsigned int den_counter = 0;
-  if (fabs(buf->buf_0) < (1e-30))
-  {
-    den_counter++;
-    printf("#DENORMAL# %d\r\n",den_counter);
-  }
-  */
-    
-    
-  DENORMAL_TO_ZERO(buf->buf_0);
-  //y(n)=bo*w(n)+b1*w(n-1)+b2*w(n-2)
-  *inputSample = filter->b0*buf->buf_0 + filter->b1*buf->buf_1+ filter->b2*buf->buf_2;
+    // w(n) = x(n) - a1*w(n-1) - a2*w(n-2)
+    buf->buf_0
+        = sample
+        - filter->a1 * buf->buf_1
+        - filter->a2 * buf->buf_2;
 
-  buf->buf_2 = buf->buf_1;
-  buf->buf_1 = buf->buf_0;
-  
-  //Process 3,4 orders if apply
-  if(filter->filter_order)
-  {
-      //w(n)=x(n)-a1*w(n-1)-a2*w(n-2)
-      buf->buf_e0 = (*inputSample)-filter->a1_1*buf->buf_e1-filter->a1_2*buf->buf_e2;
-      //y(n)=bo*w(n)+b1*w(n-1)+b2*w(n-2)
-      DENORMAL_TO_ZERO(buf->buf_e0);
-      *inputSample =  filter->b1_0*buf->buf_e0 + filter->b1_1*buf->buf_e1+ filter->b1_2*buf->buf_e2;
+    DENORMAL_TO_ZERO(buf->buf_0);
 
-      buf->buf_e2 = buf->buf_e1;
-      buf->buf_e1 = buf->buf_e0;
-  }
+    //y(n) = bo*w(n) + b1*w(n-1) + b2*w(n-2)
+    sample
+        = filter->b0 * buf->buf_0
+        + filter->b1 * buf->buf_1
+        + filter->b2 * buf->buf_2;
+
+    buf->buf_2 = buf->buf_1;
+    buf->buf_1 = buf->buf_0;
+
+    //Process 3,4 orders if apply
+    if( filter->filter_order ) {
+        // w(n) = x(n) - a1*w(n-1) - a2*w(n-2)
+        buf->buf_e0
+            = sample
+            - filter->a1_1 * buf->buf_e1
+            - filter->a1_2 * buf->buf_e2;
+
+        DENORMAL_TO_ZERO(buf->buf_e0);
+
+        //y(n) = bo*w(n) + b1*w(n-1) + b2*w(n-2)
+        sample
+            = filter->b1_0 * buf->buf_e0
+            + filter->b1_1 * buf->buf_e1
+            + filter->b1_2 * buf->buf_e2;
+
+        buf->buf_e2 = buf->buf_e1;
+        buf->buf_e1 = buf->buf_e0;
+    }
+
+    return sample;
 }
+
 #endif
