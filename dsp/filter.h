@@ -36,11 +36,6 @@ This file contains the filter definitions
 
 #include "../filter_type.h"
 
-//Interpolation params
-#define FREQ_INTER_DEC_SECOND 30.0f
-#define GAIN_INTER_DB_SECOND 15.0f
-#define Q_INTER_DEC_SECOND 10.0f
-
 typedef struct Filter {
     double b0, b1, b2, a1, a2; //Second Order coefficients
     double b1_0, b1_1, b1_2, a1_1, a1_2; //Second Order extra coefficients
@@ -49,11 +44,6 @@ typedef struct Filter {
     float gain, freq, q;
     int is_enabled;
     FilterType filter_type; //Filter type
-
-    //Interpolation Params
-    float freqInter;
-    float gainInter;
-    float QInter;
 } Filter;
 
 typedef struct
@@ -76,11 +66,6 @@ static inline Filter *FilterInit(double rate) {
     filter->q = 1.0f;
     filter->is_enabled = 0;
     filter->filter_type = FILTER_TYPE_NOT_SET;
-
-    //Interpolations
-    filter->freqInter = pow(10.0f, FREQ_INTER_DEC_SECOND/(float)rate);
-    filter->gainInter = pow(10.0f,0.05f * GAIN_INTER_DB_SECOND)/(float)rate;
-    filter->QInter = pow(10.0f, Q_INTER_DEC_SECOND/(float)rate);
 
     return filter;
 }
@@ -129,39 +114,6 @@ static inline void initialize_coefficients( Coefficients* p_coefficients ) {
     p_coefficients->b1_0 = 1.0;
     p_coefficients->b1_1 = 1.0;
     p_coefficients->b1_2 = 1.0;
-
-    return;
-}
-
-static inline void interpolate_freq( Filter* filter, float fFreq ) {
-    float err = fFreq / filter->freq;
-
-    filter->freq
-        = ( err > filter->freqInter )   ? filter->freq * filter->freqInter
-        : ( err < 1/filter->freqInter ) ? filter->freq / filter->freqInter
-                                        : fFreq;
-
-    return;
-}
-
-static inline void interpolate_gain( Filter* filter, float fGain ) {
-    float err = fGain - filter->gain;
-
-    filter->gain
-        = ( err > filter->gainInter )   ? filter->gain + filter->gainInter
-        : ( err < - filter->gainInter ) ? filter->gain - filter->gainInter
-                                        : fGain;
-
-    return;
-}
-
-static inline void interpolate_q( Filter* filter, float fQ ) {
-    float err = fQ / filter->q;
-
-    filter->q
-        = ( err > filter->QInter )      ? filter->q * filter->QInter
-        : ( err < 1/filter->QInter )    ? filter->q / filter->QInter
-                                        : fQ;
 
     return;
 }
@@ -537,10 +489,9 @@ static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ,
 
     initialize_coefficients( p_coefficients );
 
-    interpolate_freq( filter, fFreq );
-    interpolate_gain( filter, fGain );
-    interpolate_q( filter, fQ );
-
+    filter->freq = fFreq;
+    filter->gain = fGain;
+    filter->q = fQ;
     filter->is_enabled = is_enabled;
     filter->filter_type = filter_type;
 

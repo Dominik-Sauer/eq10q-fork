@@ -384,6 +384,8 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     if (fft_is_ready)
         _send_fft( plugin );
 
+    if (forceRecalcCoefs)
+        printf("%d\n", rand());
     //Update VU ports
     *( plugin->fVuIn ) = ComputeVu(plugin->InputVu, sample_count);
     *( plugin->fVuOut ) = ComputeVu(plugin->OutputVu, sample_count);
