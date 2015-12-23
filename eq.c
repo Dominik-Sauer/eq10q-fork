@@ -293,6 +293,40 @@ static inline void _send_fft ( EQ *plugin ) {
     lv2_atom_forge_pop(&plugin->forge, &plugin->notify_frame);
 }
 
+static inline int _did_filter_params_change( EQ *plugin, int band ) {
+    if (
+        dB2Lin( *plugin->fBandGain[band] )
+        !=
+        plugin->filter[band]->gain
+    ) return 1;
+
+    if (
+        *plugin->fBandFreq[band]
+        !=
+        plugin->filter[band]->freq
+    ) return 1;
+
+    if (
+        *plugin->fBandParam[band]
+        !=
+        plugin->filter[band]->q
+    ) return 1;
+
+    if (
+        (int)(*plugin->fBandType[band])
+        !=
+        plugin->filter[band]->filter_type
+    ) return 1;
+
+    if (
+        (int)(*plugin->fBandEnabled[band])
+        !=
+        plugin->filter[band]->is_enabled
+    ) return 1;
+
+    return 0;
+}
+
 static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     EQ *plugin = (EQ *)instance;
 
@@ -308,30 +342,14 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     //printf("Notify port size %d\n", notify_capacity);
 
     //Interpolation coefs force to recompute
-    int recalcCoefs[NUM_BANDS];
-    int forceRecalcCoefs = 0;
+    int coefs_changed[NUM_BANDS];
 
     double current_sample;
 
     //Read EQ Ports and mark to recompute if changed
     for(int band = 0; band<NUM_BANDS; band++)
     {
-        if(
-            dB2Lin(*(plugin->fBandGain[band])) != plugin->filter[band]->gain
-            ||
-            *plugin->fBandFreq[band] != plugin->filter[band]->freq
-            ||
-            *plugin->fBandParam[band] != plugin->filter[band]->q
-            ||
-            ((int)(*plugin->fBandType[band])) != plugin->filter[band]->filter_type
-            ||
-            ((int)(*plugin->fBandEnabled[band])) != plugin->filter[band]->is_enabled
-        ) {
-            recalcCoefs[band] = 1;
-            forceRecalcCoefs = 1;
-        } else {
-            recalcCoefs[band] = 0;
-        }
+        coefs_changed[band] = _did_filter_params_change( plugin, band );
     }
 
     //Read input Atom control port (Data from GUI)
@@ -352,26 +370,28 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
             if(plugin->is_fft_on)
                 fft_is_ready = add_sample_and_maybe_compute_FFT( &plugin->fft1, current_sample );
 
-            //Coefs Interpolation
-            if( forceRecalcCoefs ) {
-                for( int band = 0; band < NUM_BANDS; band++ ) {
-                    if(recalcCoefs[band])
-                        calcCoefs(plugin->filter[band],
-                            dB2Lin(*(plugin->fBandGain[band])),
-                            *plugin->fBandFreq[band],
-                            *plugin->fBandParam[band],
-                            (int)(*plugin->fBandType[band]),
-                            (int)(*plugin->fBandEnabled[band])
-                        );
-                }
-            }
+            for( int band = 0; band < NUM_BANDS; band++ ) {
+                if( ! (int)(*plugin->fBandEnabled[band]) )
+                    continue;
 
-            for( int band = 0; band < NUM_BANDS; band++ )
+                if( coefs_changed[band] ) {
+                    calcCoefs(plugin->filter[band],
+                        dB2Lin(*(plugin->fBandGain[band])),
+                        *plugin->fBandFreq[band],
+                        *plugin->fBandParam[band],
+                        (int)(*plugin->fBandType[band]),
+                        (int)(*plugin->fBandEnabled[band])
+                    );
+
+                    coefs_changed[band] = 0;
+                };
+
                 current_sample = computeFilter(
                     plugin->filter[band],
                     &plugin->buf[band],
                     current_sample
                 );
+            }
 
         }
 
@@ -384,8 +404,6 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     if (fft_is_ready)
         _send_fft( plugin );
 
-    if (forceRecalcCoefs)
-        printf("%d\n", rand());
     //Update VU ports
     *( plugin->fVuIn ) = ComputeVu(plugin->InputVu, sample_count);
     *( plugin->fVuOut ) = ComputeVu(plugin->OutputVu, sample_count);
