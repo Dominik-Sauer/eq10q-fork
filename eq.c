@@ -349,7 +349,6 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
 
         //Process every band
         if(!iBypass) {
-            //FFT of input data after input gain
             if(plugin_data->is_fft_on)
                 fft_is_ready = add_sample_and_maybe_compute_FFT( &plugin_data->fft1, current_sample );
 
@@ -368,7 +367,11 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
             }
 
             for( int band = 0; band < NUM_BANDS; band++ )
-                computeFilter(plugin_data->filter[band], &plugin_data->buf[band], &current_sample);
+                current_sample = computeFilter(
+                    plugin_data->filter[band],
+                    &plugin_data->buf[band],
+                    current_sample
+                );
 
         }
 
