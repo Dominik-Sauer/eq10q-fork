@@ -478,12 +478,7 @@ static inline void compute_coefficients( Filter* filter, Coefficients* p_coeffic
 
 //Compute filter coefficients
 static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ, FilterType filter_type, int is_enabled) //p2 = GAIN p3 = Q
-{   
-    if( ! is_enabled ) {
-        disable_filter( filter, filter_type );
-        return;
-    }
-
+{
     Coefficients coefficients;
     Coefficients* p_coefficients = &coefficients;
 
