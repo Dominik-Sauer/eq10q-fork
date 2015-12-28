@@ -275,6 +275,19 @@ static inline void _handle_control_events ( EQ *plugin ) {
     }
 }
 
+static inline void _init_forge ( EQ *plugin ) {
+    lv2_atom_forge_set_buffer(
+        &plugin->forge,
+        (uint8_t*)plugin->notify_port,
+        plugin->notify_port->atom.size
+    );
+    lv2_atom_forge_sequence_head(
+        &plugin->forge,
+        &plugin->notify_frame,
+        0
+    );
+}
+
 static inline void _send_fft ( EQ *plugin ) {
     LV2_Atom_Forge_Frame frameFft;
     lv2_atom_forge_frame_time(&plugin->forge, 0);
@@ -335,11 +348,7 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     const float fInGain = dB2Lin(*(plugin->fInGain));
     const float fOutGain = dB2Lin(*(plugin->fOutGain));
 
-    //Set up forge to write directly to notify output port.
-    const uint32_t notify_capacity = plugin->notify_port->atom.size;
-    lv2_atom_forge_set_buffer(&plugin->forge, (uint8_t*)plugin->notify_port, notify_capacity);
-    lv2_atom_forge_sequence_head(&plugin->forge, &plugin->notify_frame, 0);
-    //printf("Notify port size %d\n", notify_capacity);
+    _init_forge( plugin );
 
     double current_sample;
 
