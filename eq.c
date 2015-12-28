@@ -46,18 +46,18 @@ This file implements functionalities for a large numbers of equalizers
 
 typedef struct {
     //Plugin ports
-    float *fBypass;
-    float *fInGain;
-    float *fOutGain;
-    float *fBandGain[NUM_BANDS];
-    float *fBandFreq[NUM_BANDS];
-    float *fBandParam[NUM_BANDS];
-    float *fBandType[NUM_BANDS];
-    float *fBandEnabled[NUM_BANDS];
-    float *fInput;
-    float *fOutput;
-    float *fVuIn;
-    float *fVuOut;
+    float *bypass_port;
+    float *in_gain_port;
+    float *out_gain_port;
+    float *gain_ports[NUM_BANDS];
+    float *freq_ports[NUM_BANDS];
+    float *q_ports[NUM_BANDS];
+    float *filter_type_ports[NUM_BANDS];
+    float *enabled_ports[NUM_BANDS];
+    float *input_port;
+    float *output_port;
+    float *in_vu_meter_port;
+    float *out_vu_meter_port;
     LV2_Atom_Sequence *notify_port;
     const LV2_Atom_Sequence* control_port;
 
@@ -107,66 +107,66 @@ static void connectPortEQ(LV2_Handle instance, uint32_t port, void *data)
   switch (port)
   {
     case EQ_BYPASS:
-      plugin->fBypass = data;
+      plugin->bypass_port = data;
     break;
 
     case EQ_INGAIN:
-      plugin->fInGain = data;
+      plugin->in_gain_port = data;
     break;
 
     case EQ_OUTGAIN:
-      plugin->fOutGain = data;
+      plugin->out_gain_port = data;
     break;
 
     case INPUT_PORT:
-      plugin->fInput = data;
+      plugin->input_port = data;
     break;
 
     case OUTPUT_PORT:
-      plugin->fOutput = data;
+      plugin->output_port = data;
     break;
 
     default:
         //Connect BandGain ports
         if( port >= (BAND_PORT_OFFSET) && port < (BAND_PORT_OFFSET + NUM_BANDS))
         {
-            plugin->fBandGain[port - BAND_PORT_OFFSET] = data;
+            plugin->gain_ports[port - BAND_PORT_OFFSET] = data;
         }
 
         //Connect BandFreq ports
         else if(port >= (BAND_PORT_OFFSET + NUM_BANDS) && port < (BAND_PORT_OFFSET + 2*NUM_BANDS))
         {
-            plugin->fBandFreq[port - BAND_PORT_OFFSET - NUM_BANDS] = data;
+            plugin->freq_ports[port - BAND_PORT_OFFSET - NUM_BANDS] = data;
         }
 
         //Connect BandParam ports
         else if(port >= (BAND_PORT_OFFSET + 2*NUM_BANDS) && port < (BAND_PORT_OFFSET + 3*NUM_BANDS))
         {
-            plugin->fBandParam[port - BAND_PORT_OFFSET - 2*NUM_BANDS] = data;
+            plugin->q_ports[port - BAND_PORT_OFFSET - 2*NUM_BANDS] = data;
         }
 
         //Connect BandType ports
         else if(port >= (BAND_PORT_OFFSET + 3*NUM_BANDS) && port < (BAND_PORT_OFFSET + 4*NUM_BANDS))
         {
-            plugin->fBandType[port - BAND_PORT_OFFSET - 3*NUM_BANDS] = data;
+            plugin->filter_type_ports[port - BAND_PORT_OFFSET - 3*NUM_BANDS] = data;
         }
 
         //Connect BandEnabled ports
         else if(port >= (BAND_PORT_OFFSET + 4*NUM_BANDS) && port < (BAND_PORT_OFFSET + 5*NUM_BANDS))
         {
-            plugin->fBandEnabled[port - BAND_PORT_OFFSET - 4*NUM_BANDS] = data;
+            plugin->enabled_ports[port - BAND_PORT_OFFSET - 4*NUM_BANDS] = data;
         }
 
         //Connect VuInput ports
         else if( port == (BAND_PORT_OFFSET + 5*NUM_BANDS) )
         {
-            plugin->fVuIn = data;
+            plugin->in_vu_meter_port = data;
         }
 
         //Connect VuOutput ports
         else if( port == BAND_PORT_OFFSET + 5*NUM_BANDS + 1 )
         {
-            plugin->fVuOut = data;
+            plugin->out_vu_meter_port = data;
         }
 
         //Connect Atom notify_port output port to GUI
@@ -308,31 +308,31 @@ static inline void _send_fft ( EQ *plugin ) {
 
 static inline int _did_filter_params_change( EQ *plugin, int band ) {
     if (
-        dB2Lin( *plugin->fBandGain[band] )
+        dB2Lin( *plugin->gain_ports[band] )
         !=
         plugin->filter[band]->params.gain
     ) return 1;
 
     if (
-        *plugin->fBandFreq[band]
+        *plugin->freq_ports[band]
         !=
         plugin->filter[band]->params.freq
     ) return 1;
 
     if (
-        *plugin->fBandParam[band]
+        *plugin->q_ports[band]
         !=
         plugin->filter[band]->params.q
     ) return 1;
 
     if (
-        (int)(*plugin->fBandType[band])
+        (int)(*plugin->filter_type_ports[band])
         !=
         plugin->filter[band]->params.filter_type
     ) return 1;
 
     if (
-        (int)(*plugin->fBandEnabled[band])
+        (int)(*plugin->enabled_ports[band])
         !=
         plugin->filter[band]->params.is_enabled
     ) return 1;
@@ -344,9 +344,9 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     EQ *plugin = (EQ *)instance;
 
     //Get values of control ports
-    const int iBypass = *(plugin->fBypass) > 0.0f ? 1 : 0;
-    const float fInGain = dB2Lin(*(plugin->fInGain));
-    const float fOutGain = dB2Lin(*(plugin->fOutGain));
+    const int iBypass = *(plugin->bypass_port) > 0.0f ? 1 : 0;
+    const float in_gain_linear = dB2Lin(*(plugin->in_gain_port));
+    const float out_gain_linear = dB2Lin(*(plugin->out_gain_port));
 
     _init_forge( plugin );
 
@@ -357,11 +357,11 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     {
         if( _did_filter_params_change( plugin, band ) ) {
             calcCoefs(plugin->filter[band],
-                dB2Lin(*(plugin->fBandGain[band])),
-                *plugin->fBandFreq[band],
-                *plugin->fBandParam[band],
-                (int)(*plugin->fBandType[band]),
-                (int)(*plugin->fBandEnabled[band])
+                dB2Lin(*(plugin->gain_ports[band])),
+                *plugin->freq_ports[band],
+                *plugin->q_ports[band],
+                (int)(*plugin->filter_type_ports[band]),
+                (int)(*plugin->enabled_ports[band])
             );
         };
     }
@@ -373,9 +373,9 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
 
     //Compute the filter
     for ( int current_sample_index = 0; current_sample_index < sample_count; current_sample_index++) {
-        current_sample = (double)plugin->fInput[current_sample_index];
+        current_sample = (double)plugin->input_port[current_sample_index];
         DENORMAL_TO_ZERO(current_sample);
-        current_sample *= fInGain;
+        current_sample *= in_gain_linear;
 
         SetSample(plugin->InputVu, current_sample);
 
@@ -397,18 +397,18 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
 
         }
 
-        current_sample *= fOutGain;
+        current_sample *= out_gain_linear;
         SetSample(plugin->OutputVu, current_sample);
 
-        plugin->fOutput[current_sample_index] = (float)current_sample;
+        plugin->output_port[current_sample_index] = (float)current_sample;
     }
 
     if (fft_is_ready)
         _send_fft( plugin );
 
     //Update VU ports
-    *( plugin->fVuIn ) = ComputeVu(plugin->InputVu, sample_count);
-    *( plugin->fVuOut ) = ComputeVu(plugin->OutputVu, sample_count);
+    *( plugin->in_vu_meter_port ) = ComputeVu(plugin->InputVu, sample_count);
+    *( plugin->out_vu_meter_port ) = ComputeVu(plugin->OutputVu, sample_count);
 }
 
 static const LV2_Descriptor eqDescriptor = {
