@@ -26,7 +26,7 @@ This file contains the filter definitions
   #define FILTER_H
 
 #include <math.h>
-
+#include <string.h>
 //#include <stdio.h>
 
 //Constants definitions
@@ -63,24 +63,17 @@ typedef struct
 }Buffers;
 
 //Initialize filter instance
-static inline Filter *FilterInit(double sample_rate) {
-    Filter *filter = (Filter *)malloc(sizeof(Filter));
-
-    filter->params.sample_rate = sample_rate;
-    filter->params.gain = 1.0f;
-    filter->params.freq = 100.0f;
-    filter->params.q = 1.0f;
-    filter->params.is_enabled = 0;
-    filter->params.filter_type = FILTER_TYPE_NOT_SET;
-
-    return filter;
+static inline void FilterParamsInit(FilterParams *filter_params, double sample_rate) {
+    filter_params->sample_rate = sample_rate;
+    filter_params->gain = 1.0f;
+    filter_params->freq = 100.0f;
+    filter_params->q = 1.0f;
+    filter_params->is_enabled = 0;
+    filter_params->filter_type = FILTER_TYPE_NOT_SET;
 }
 
-
-//Destroy a filter instance
-static inline void FilterClean(Filter *filter)
-{
-    free(filter);
+static inline void FilterInit(Filter *filter, double sample_rate) {
+    FilterParamsInit( &filter->params, sample_rate );
 }
 
 //Clean buffers
@@ -488,21 +481,21 @@ static inline void compute_coefficients( Filter* filter, Coefficients* p_coeffic
     return;
 }
 
+static inline void set_filter_params(Filter *filter, FilterParams *filter_params) {
+    memcpy(&filter->params, filter_params, sizeof(FilterParams));
+}
+
 //Compute filter coefficients
-static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ, FilterType filter_type, int is_enabled) //p2 = GAIN p3 = Q
+static inline void calcCoefs(Filter *filter, FilterParams *filter_params)
 {
     Coefficients coefficients;
     Coefficients* p_coefficients = &coefficients;
 
     initialize_coefficients( p_coefficients );
 
-    filter->params.freq = fFreq;
-    filter->params.gain = fGain;
-    filter->params.q = fQ;
-    filter->params.is_enabled = is_enabled;
-    filter->params.filter_type = filter_type;
+    set_filter_params(filter, filter_params);
 
-    compute_coefficients( filter, p_coefficients, filter_type );
+    compute_coefficients( filter, p_coefficients, filter_params->filter_type );
 
     normalize_coefs( filter, p_coefficients );
 

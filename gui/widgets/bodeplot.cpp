@@ -858,24 +858,17 @@ PlotEQCurve::signal_BandUnselected PlotEQCurve::signal_unselected()
 
 void PlotEQCurve::CalcBand_DigitalFilter(int bd_ix)
 {
-  //Init Filter to avoid coef interpolation
-  Filter m_fil;
-  m_fil.params.gain = pow(10,((m_filters[bd_ix]->Gain)/20));
-  m_fil.params.freq = m_filters[bd_ix]-> Freq;
-  m_fil.params.q = m_filters[bd_ix]->Q;
-  m_fil.params.is_enabled = 1;
-  m_fil.params.filter_type = m_filters[bd_ix]->fType;
-  m_fil.params.sample_rate = m_sample_rate;
-  
+  FilterParams filter_params;
+  filter_params.gain = pow(10,((m_filters[bd_ix]->Gain)/20));
+  filter_params.freq = m_filters[bd_ix]-> Freq;
+  filter_params.q = m_filters[bd_ix]->Q;
+  filter_params.is_enabled = 1;
+  filter_params.filter_type = m_filters[bd_ix]->fType;
+  filter_params.sample_rate = m_sample_rate;
+
   //Calc coefs
-  calcCoefs(
-      &m_fil,
-      m_fil.params.gain,
-      m_fil.params.freq,
-      m_fil.params.q,
-      m_fil.params.filter_type,
-      m_fil.params.is_enabled
-  );
+  Filter m_fil;
+  calcCoefs( &m_fil, &filter_params );
 
   //Digital filter magnitude response
   double w, A, B, C, D, sinW, cosW;

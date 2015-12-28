@@ -73,7 +73,8 @@ typedef struct {
     double sample_rate;
 
     //Plugin DSP
-    Filter *filter[NUM_BANDS];
+    Filter filter[NUM_BANDS];
+    FilterParams current_filter_params[NUM_BANDS];
     Buffers buf[NUM_BANDS];
 
     Vu *InputVu;
@@ -87,9 +88,6 @@ typedef struct {
 static void cleanupEQ(LV2_Handle instance)
 {
     EQ *plugin = (EQ *)instance;
-
-    for(int i=0; i<NUM_BANDS; i++)
-        FilterClean(plugin->filter[i]);
 
     VuClean(plugin->InputVu);
     VuClean(plugin->OutputVu);
@@ -189,9 +187,10 @@ static LV2_Handle instantiateEQ(const LV2_Descriptor *descriptor, double sample_
     EQ *plugin = (EQ *)malloc( sizeof(EQ) );
     plugin->sample_rate = sample_rate;
 
-    for( int i = 0; i < NUM_BANDS; i++ ) {
-        plugin->filter[i] = FilterInit(sample_rate);
-        flushBuffers(&plugin->buf[i]);
+    for( int band = 0; band < NUM_BANDS; band++ ) {
+        FilterInit(&plugin->filter[band], sample_rate);
+        FilterParamsInit(&plugin->current_filter_params[band], sample_rate);
+        flushBuffers(&plugin->buf[band]);
     }
 
     plugin->InputVu = VuInit(sample_rate);
@@ -306,38 +305,16 @@ static inline void _send_fft ( EQ *plugin ) {
     lv2_atom_forge_pop(&plugin->forge, &plugin->notify_frame);
 }
 
-static inline int _did_filter_params_change( EQ *plugin, int band ) {
-    if (
-        dB2Lin( *plugin->gain_ports[band] )
-        !=
-        plugin->filter[band]->params.gain
-    ) return 1;
+static inline int _did_filter_params_change( Filter *filter, FilterParams *current_params ){
+    return !! memcmp(filter, current_params, sizeof(FilterParams));
+}
 
-    if (
-        *plugin->freq_ports[band]
-        !=
-        plugin->filter[band]->params.freq
-    ) return 1;
-
-    if (
-        *plugin->q_ports[band]
-        !=
-        plugin->filter[band]->params.q
-    ) return 1;
-
-    if (
-        (int)(*plugin->filter_type_ports[band])
-        !=
-        plugin->filter[band]->params.filter_type
-    ) return 1;
-
-    if (
-        (int)(*plugin->enabled_ports[band])
-        !=
-        plugin->filter[band]->params.is_enabled
-    ) return 1;
-
-    return 0;
+static inline void _copy_ports_to_filter_params( EQ *plugin, int band, FilterParams *filter_params ) {
+    filter_params->gain        = dB2Lin(*(plugin->gain_ports[band]));
+    filter_params->freq        = *plugin->freq_ports[band];
+    filter_params->q           = *plugin->q_ports[band];
+    filter_params->filter_type = (FilterType)*plugin->filter_type_ports[band];
+    filter_params->is_enabled  = (int)*plugin->enabled_ports[band];
 }
 
 static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
@@ -350,20 +327,21 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
 
     _init_forge( plugin );
 
-    double current_sample;
-
     //Read EQ Ports and recompute if changed
     for(int band = 0; band<NUM_BANDS; band++)
     {
-        if( _did_filter_params_change( plugin, band ) ) {
-            calcCoefs(plugin->filter[band],
-                dB2Lin(*(plugin->gain_ports[band])),
-                *plugin->freq_ports[band],
-                *plugin->q_ports[band],
-                (int)(*plugin->filter_type_ports[band]),
-                (int)(*plugin->enabled_ports[band])
+        //ports to current_filter_params
+        _copy_ports_to_filter_params( plugin, band, plugin->current_filter_params + band );
+
+        if( _did_filter_params_change(
+            plugin->filter + band,
+            plugin->current_filter_params + band
+        ) ) {
+            calcCoefs(
+                plugin->filter + band,
+                plugin->current_filter_params + band
             );
-        };
+        }
     }
 
     //Read input Atom control port (Data from GUI)
@@ -373,11 +351,12 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
 
     //Compute the filter
     for ( int current_sample_index = 0; current_sample_index < sample_count; current_sample_index++) {
-        current_sample = (double)plugin->input_port[current_sample_index];
+        double current_sample = (double)plugin->input_port[current_sample_index];
+
         DENORMAL_TO_ZERO(current_sample);
         current_sample *= in_gain_linear;
 
-        SetSample(plugin->InputVu, current_sample);
+        SetSample( plugin->InputVu, current_sample );
 
         //Process every band
         if(!iBypass) {
@@ -385,12 +364,12 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
                 fft_is_ready = add_sample_and_maybe_compute_FFT( &plugin->fft1, current_sample );
 
             for( int band = 0; band < NUM_BANDS; band++ ) {
-                if( ! plugin->filter[band]->params.is_enabled )
+                if( ! plugin->filter[band].params.is_enabled )
                     continue;
 
                 current_sample = computeFilter(
-                    plugin->filter[band],
-                    &plugin->buf[band],
+                    plugin->filter + band,
+                    plugin->buf + band,
                     current_sample
                 );
             }
