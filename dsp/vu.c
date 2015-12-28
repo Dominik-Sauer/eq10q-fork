@@ -30,7 +30,7 @@ This file contains a VU meter implementation
 #define CONSTANT_VU 1.4142136
 
 //Initialize the VU meter
-Vu *VuInit(double rate)
+Vu *VuInit(double sample_rate)
 {
   Vu *vu = (Vu *)malloc(sizeof(Vu));
 
@@ -38,7 +38,7 @@ Vu *VuInit(double rate)
   vu->vu_max = 0.0;
   
   vu->m_min = (1.0 / 256);
-  vu->m_decay = exp( -1.0 / rate);
+  vu->m_decay = exp( -1.0 / sample_rate);
   
   return vu;
 }

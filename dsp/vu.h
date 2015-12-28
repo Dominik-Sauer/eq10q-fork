@@ -34,7 +34,7 @@ typedef struct
 }Vu;
 
 //Initialize the VU meter
-Vu *VuInit(double rate);
+Vu *VuInit(double sample_rate);
 
 //Destroy a Vu instance
 void VuClean(Vu *vu);

@@ -757,14 +757,14 @@ void EqMainWindow::gui_port_event(
             const LV2_Atom_Object* obj = (const LV2_Atom_Object*)atom;
 
             if(obj->body.otype == uris.atom_sample_rate_response) {
-                const LV2_Atom* samplerate_val = NULL;
-                const int n_props  = lv2_atom_object_get(obj, uris.atom_sample_rate_key, &samplerate_val, NULL);
+                const LV2_Atom* sample_rate_atom = NULL;
+                const int n_props  = lv2_atom_object_get(obj, uris.atom_sample_rate_key, &sample_rate_atom, NULL);
 
-                if (n_props != 1 ||   samplerate_val->type != uris.atom_Double) {
+                if (n_props != 1 ||   sample_rate_atom->type != uris.atom_Double) {
                     std::cout<<"Atom Object does not have the required properties (sample-rate) with correct types"<<std::endl;
                 } else {
-                    SampleRate = ((const LV2_Atom_Double*)samplerate_val)->body;
-                    m_Bode->setSampleRate(SampleRate);
+                    m_sample_rate = ((const LV2_Atom_Double*)sample_rate_atom)->body;
+                    m_Bode->set_sample_rate(m_sample_rate);
                 }
             } else if(obj->body.otype == uris.atom_fft_data_event) {
                 const LV2_Atom* fftdata_val = NULL;

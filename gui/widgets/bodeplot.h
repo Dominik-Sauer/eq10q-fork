@@ -63,7 +63,7 @@ class PlotEQCurve : public Gtk::DrawingArea
     virtual void setBandType(int bd_ix, FilterType newType);
     virtual void setBandEnable(int bd_ix, bool bIsEnabled);
     virtual void setBypass(bool bypass);
-    virtual void setSampleRate(double samplerate);
+    virtual void set_sample_rate(double sample_rate);
     virtual void setFftData(double *fft_data);
     virtual void setFftActive(bool active, bool isSpectrogram);
     virtual void setFftGain(double g);
@@ -120,7 +120,7 @@ class PlotEQCurve : public Gtk::DrawingArea
     bool bBandFocus;
     bool *m_Bands2Redraw;
     bool m_BandRedraw, m_fullRedraw, m_justRedraw;
-    double SampleRate;
+    double m_sample_rate;
     bool m_FftActive;
     double m_minFreq, m_maxFreq;
     double m_dB_plot_range;

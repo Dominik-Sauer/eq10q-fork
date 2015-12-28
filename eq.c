@@ -70,7 +70,7 @@ typedef struct {
 
     //Atom URID
     Eq10qURIs uris;
-    double sampleRate;
+    double sample_rate;
 
     //Plugin DSP
     Filter *filter[NUM_BANDS];
@@ -184,18 +184,18 @@ static void connectPortEQ(LV2_Handle instance, uint32_t port, void *data)
   }
 }
 
-static LV2_Handle instantiateEQ(const LV2_Descriptor *descriptor, double s_rate, const char *path, const LV2_Feature *const * features)
+static LV2_Handle instantiateEQ(const LV2_Descriptor *descriptor, double sample_rate, const char *path, const LV2_Feature *const * features)
 {
     EQ *plugin = (EQ *)malloc( sizeof(EQ) );
-    plugin->sampleRate = s_rate;
+    plugin->sample_rate = sample_rate;
 
     for( int i = 0; i < NUM_BANDS; i++ ) {
-        plugin->filter[i] = FilterInit(s_rate);
+        plugin->filter[i] = FilterInit(sample_rate);
         flushBuffers(&plugin->buf[i]);
     }
 
-    plugin->InputVu = VuInit(s_rate);
-    plugin->OutputVu = VuInit(s_rate);
+    plugin->InputVu = VuInit(sample_rate);
+    plugin->OutputVu = VuInit(sample_rate);
 
     for (int i = 0; features[i]; i++ ) {
         if( !strcmp( features[i]->URI, LV2_URID__map ) )
@@ -247,7 +247,7 @@ static inline void _handle_control_event ( EQ *plugin, const LV2_Atom_Event *ato
         lv2_atom_forge_frame_time(&plugin->forge, 0);
         lv2_atom_forge_object( &plugin->forge, &frameSR, 0, plugin->uris.atom_sample_rate_response);
         lv2_atom_forge_key(&plugin->forge, plugin->uris.atom_sample_rate_key);
-        lv2_atom_forge_double(&plugin->forge, plugin->sampleRate);
+        lv2_atom_forge_double(&plugin->forge, plugin->sample_rate);
         lv2_atom_forge_pop(&plugin->forge, &frameSR);
 
         // Close off sequence
@@ -273,6 +273,19 @@ static inline void _handle_control_events ( EQ *plugin ) {
 
         atom_event = lv2_atom_sequence_next( atom_event );
     }
+}
+
+static inline void _init_forge ( EQ *plugin ) {
+    lv2_atom_forge_set_buffer(
+        &plugin->forge,
+        (uint8_t*)plugin->notify_port,
+        plugin->notify_port->atom.size
+    );
+    lv2_atom_forge_sequence_head(
+        &plugin->forge,
+        &plugin->notify_frame,
+        0
+    );
 }
 
 static inline void _send_fft ( EQ *plugin ) {
@@ -335,11 +348,7 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     const float fInGain = dB2Lin(*(plugin->fInGain));
     const float fOutGain = dB2Lin(*(plugin->fOutGain));
 
-    //Set up forge to write directly to notify output port.
-    const uint32_t notify_capacity = plugin->notify_port->atom.size;
-    lv2_atom_forge_set_buffer(&plugin->forge, (uint8_t*)plugin->notify_port, notify_capacity);
-    lv2_atom_forge_sequence_head(&plugin->forge, &plugin->notify_frame, 0);
-    //printf("Notify port size %d\n", notify_capacity);
+    _init_forge( plugin );
 
     double current_sample;
 
