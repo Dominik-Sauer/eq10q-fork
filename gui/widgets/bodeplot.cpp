@@ -860,16 +860,23 @@ void PlotEQCurve::CalcBand_DigitalFilter(int bd_ix)
 {
   //Init Filter to avoid coef interpolation
   Filter m_fil;
-  m_fil.gain = pow(10,((m_filters[bd_ix]->Gain)/20));
-  m_fil.freq = m_filters[bd_ix]-> Freq;
-  m_fil.q = m_filters[bd_ix]->Q;
-  m_fil.is_enabled = 1;
-  m_fil.filter_type = m_filters[bd_ix]->fType;
-  m_fil.sample_rate = m_sample_rate;
+  m_fil.params.gain = pow(10,((m_filters[bd_ix]->Gain)/20));
+  m_fil.params.freq = m_filters[bd_ix]-> Freq;
+  m_fil.params.q = m_filters[bd_ix]->Q;
+  m_fil.params.is_enabled = 1;
+  m_fil.params.filter_type = m_filters[bd_ix]->fType;
+  m_fil.params.sample_rate = m_sample_rate;
   
   //Calc coefs
-  calcCoefs(&m_fil, m_fil.gain, m_fil.freq, m_fil.q, m_fil.filter_type, m_fil.is_enabled);
-  
+  calcCoefs(
+      &m_fil,
+      m_fil.params.gain,
+      m_fil.params.freq,
+      m_fil.params.q,
+      m_fil.params.filter_type,
+      m_fil.params.is_enabled
+  );
+
   //Digital filter magnitude response
   double w, A, B, C, D, sinW, cosW;
   //Precalculables
@@ -880,7 +887,7 @@ void PlotEQCurve::CalcBand_DigitalFilter(int bd_ix)
   
   for(int i=0; i<CURVE_NUM_OF_POINTS; i++)
   {
-    w=2*M_PI*f[i] / m_fil.sample_rate;
+    w=2*M_PI*f[i] / m_fil.params.sample_rate;
     sinW = sin(w);
     cosW = cos(w);
     A = m_fil.b1 + AK*cosW;
@@ -901,7 +908,7 @@ void PlotEQCurve::CalcBand_DigitalFilter(int bd_ix)
     
     for(int i=0; i<CURVE_NUM_OF_POINTS; i++)
     {
-      w=2*M_PI*f[i] / m_fil.sample_rate;
+      w=2*M_PI*f[i] / m_fil.params.sample_rate;
       sinW = sin(w);
       cosW = cos(w);
       A = m_fil.b1_1 + AK*cosW;

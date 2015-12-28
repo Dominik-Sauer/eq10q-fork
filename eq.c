@@ -310,31 +310,31 @@ static inline int _did_filter_params_change( EQ *plugin, int band ) {
     if (
         dB2Lin( *plugin->fBandGain[band] )
         !=
-        plugin->filter[band]->gain
+        plugin->filter[band]->params.gain
     ) return 1;
 
     if (
         *plugin->fBandFreq[band]
         !=
-        plugin->filter[band]->freq
+        plugin->filter[band]->params.freq
     ) return 1;
 
     if (
         *plugin->fBandParam[band]
         !=
-        plugin->filter[band]->q
+        plugin->filter[band]->params.q
     ) return 1;
 
     if (
         (int)(*plugin->fBandType[band])
         !=
-        plugin->filter[band]->filter_type
+        plugin->filter[band]->params.filter_type
     ) return 1;
 
     if (
         (int)(*plugin->fBandEnabled[band])
         !=
-        plugin->filter[band]->is_enabled
+        plugin->filter[band]->params.is_enabled
     ) return 1;
 
     return 0;
@@ -385,7 +385,7 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
                 fft_is_ready = add_sample_and_maybe_compute_FFT( &plugin->fft1, current_sample );
 
             for( int band = 0; band < NUM_BANDS; band++ ) {
-                if( ! plugin->filter[band]->is_enabled )
+                if( ! plugin->filter[band]->params.is_enabled )
                     continue;
 
                 current_sample = computeFilter(
