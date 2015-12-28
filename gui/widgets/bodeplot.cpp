@@ -47,7 +47,7 @@ bBandFocus(false),
 m_BandRedraw(false),
 m_fullRedraw(false),
 m_justRedraw(false),
-SampleRate(0), //Initially zero to force the freq vectors initialization 
+m_sample_rate(0), //Initially zero to force the freq vectors initialization
 m_FftActive(false),
 m_minFreq(MIN_FREQ),
 m_maxFreq(MAX_FREQ),
@@ -126,7 +126,7 @@ m_bFftHold(false)
 
 
   //Init FFT vectors
-  setSampleRate(44.1e3);
+  set_sample_rate(44.1e3);
       
   //Allow this widget to get keyboard focus
   set_can_focus(true);
@@ -865,7 +865,7 @@ void PlotEQCurve::CalcBand_DigitalFilter(int bd_ix)
   m_fil.q = m_filters[bd_ix]->Q;
   m_fil.is_enabled = 1;
   m_fil.filter_type = m_filters[bd_ix]->fType;
-  m_fil.fs = SampleRate;
+  m_fil.sample_rate = m_sample_rate;
   
   //Calc coefs
   calcCoefs(&m_fil, m_fil.gain, m_fil.freq, m_fil.q, m_fil.filter_type, m_fil.is_enabled);
@@ -880,7 +880,7 @@ void PlotEQCurve::CalcBand_DigitalFilter(int bd_ix)
   
   for(int i=0; i<CURVE_NUM_OF_POINTS; i++)
   {
-    w=2*M_PI*f[i] / m_fil.fs;
+    w=2*M_PI*f[i] / m_fil.sample_rate;
     sinW = sin(w);
     cosW = cos(w);
     A = m_fil.b1 + AK*cosW;
@@ -901,7 +901,7 @@ void PlotEQCurve::CalcBand_DigitalFilter(int bd_ix)
     
     for(int i=0; i<CURVE_NUM_OF_POINTS; i++)
     {
-      w=2*M_PI*f[i] / m_fil.fs;
+      w=2*M_PI*f[i] / m_fil.sample_rate;
       sinW = sin(w);
       cosW = cos(w);
       A = m_fil.b1_1 + AK*cosW;
@@ -913,19 +913,19 @@ void PlotEQCurve::CalcBand_DigitalFilter(int bd_ix)
   }
 }
 
-void PlotEQCurve::setSampleRate(double samplerate)
+void PlotEQCurve::set_sample_rate(double sample_rate)
 { 
-  if(samplerate != SampleRate)
+  if(sample_rate != m_sample_rate)
   {
-    SampleRate = samplerate;
+    m_sample_rate = sample_rate;
     
     if( !(m_background_surface_ptr || m_fft_surface_ptr || m_zoom_surface_ptr || m_maincurve_surface_ptr || m_grid_surface_ptr  || m_xAxis_surface_ptr || m_yAxis_surface_ptr))
     {
-      //Init FFT vectors using real sampleRate
+      //Init FFT vectors using real sample_rate
       double fft_raw_freq;
       for(int i = 0; i < (FFT_N/2); i++)
       {     
-        fft_raw_freq = (SampleRate * (double)i) /  ((double)(FFT_N));
+        fft_raw_freq = (m_sample_rate * (double)i) /  ((double)(FFT_N));
         xPixels_fft[i] = log10(fft_raw_freq/MIN_FREQ)/log10(MAX_FREQ/MIN_FREQ);        
         fft_pink_noise[i] =  3.0*(log10(fft_raw_freq/20.0)/log10(2));
         fft_plot[i]= 0.0;

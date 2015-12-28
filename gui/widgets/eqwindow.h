@@ -127,7 +127,7 @@ class EqMainWindow : public MainWidget
     void onLeftRightModeSelected();
         
   private:
-    double SampleRate;
+    double m_sample_rate;
     float m_bypassValue;
     const int m_iNumOfBands;
     bool m_bMutex, m_port_event_InGain, m_port_event_OutGain, m_port_event_Bypass, m_port_event_Curve;
