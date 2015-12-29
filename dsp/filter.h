@@ -26,7 +26,7 @@ This file contains the filter definitions
   #define FILTER_H
 
 #include <math.h>
-
+#include <string.h>
 //#include <stdio.h>
 
 //Constants definitions
@@ -36,14 +36,20 @@ This file contains the filter definitions
 
 #include "../filter_type.h"
 
+typedef struct FilterParams {
+    double sample_rate;
+    float gain;
+    float freq;
+    float q;
+    int is_enabled;
+    FilterType filter_type;
+} FilterParams;
+
 typedef struct Filter {
     double b0, b1, b2, a1, a2; //Second Order coefficients
     double b1_0, b1_1, b1_2, a1_1, a1_2; //Second Order extra coefficients
     int filter_order;  //filter order
-    double sample_rate;
-    float gain, freq, q;
-    int is_enabled;
-    FilterType filter_type; //Filter type
+    FilterParams params;
 } Filter;
 
 typedef struct
@@ -57,24 +63,17 @@ typedef struct
 }Buffers;
 
 //Initialize filter instance
-static inline Filter *FilterInit(double sample_rate) {
-    Filter *filter = (Filter *)malloc(sizeof(Filter));
-
-    filter->sample_rate = sample_rate;
-    filter->gain = 1.0f;
-    filter->freq = 100.0f;
-    filter->q = 1.0f;
-    filter->is_enabled = 0;
-    filter->filter_type = FILTER_TYPE_NOT_SET;
-
-    return filter;
+static inline void FilterParamsInit(FilterParams *filter_params, double sample_rate) {
+    filter_params->sample_rate = sample_rate;
+    filter_params->gain = 1.0f;
+    filter_params->freq = 100.0f;
+    filter_params->q = 1.0f;
+    filter_params->is_enabled = 0;
+    filter_params->filter_type = FILTER_TYPE_NOT_SET;
 }
 
-
-//Destroy a filter instance
-static inline void FilterClean(Filter *filter)
-{
-    free(filter);
+static inline void FilterInit(Filter *filter, double sample_rate) {
+    FilterParamsInit( &filter->params, sample_rate );
 }
 
 //Clean buffers
@@ -121,7 +120,7 @@ static inline void initialize_coefficients( Coefficients* p_coefficients ) {
 static inline void compute_HPF1_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = tanf( M_PI * ( filter->freq / filter->sample_rate ) );
+    double w0 = tanf( M_PI * ( filter->params.freq / filter->params.sample_rate ) );
 
     p_coefficients->b0 = 1.0;
     p_coefficients->b1 = -1.0;
@@ -136,7 +135,7 @@ static inline void compute_HPF1_coefficients( Filter* filter, Coefficients* p_co
 static inline void compute_LPF1_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = tanf( M_PI * ( filter->freq / filter->sample_rate ) );
+    double w0 = tanf( M_PI * ( filter->params.freq / filter->params.sample_rate ) );
 
     p_coefficients->b0 = w0;
     p_coefficients->b1 = w0;
@@ -151,8 +150,8 @@ static inline void compute_LPF1_coefficients( Filter* filter, Coefficients* p_co
 static inline void compute_HPF2_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = 2 * M_PI * ( filter->freq / filter->sample_rate );
-    double alpha = sinf( w0 ) / ( 2 * filter->q );
+    double w0 = 2 * M_PI * ( filter->params.freq / filter->params.sample_rate );
+    double alpha = sinf( w0 ) / ( 2 * filter->params.q );
     double cosf_w0 = cosf( w0 );
 
     p_coefficients->b1_0 = p_coefficients->b0 = (1 + cosf_w0)/2; //b0
@@ -168,8 +167,8 @@ static inline void compute_HPF2_coefficients( Filter* filter, Coefficients* p_co
 static inline void compute_LPF2_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = 2 * M_PI * ( filter->freq / filter->sample_rate );
-    double alpha = sinf( w0 ) / ( 2 * filter->q );
+    double w0 = 2 * M_PI * ( filter->params.freq / filter->params.sample_rate );
+    double alpha = sinf( w0 ) / ( 2 * filter->params.q );
     double cosf_w0 = cosf( w0 );
 
     p_coefficients->b1_0 = p_coefficients->b0 = (1 - cosf_w0)/2; //b0
@@ -185,8 +184,8 @@ static inline void compute_LPF2_coefficients( Filter* filter, Coefficients* p_co
 static inline void compute_HPF3_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 1;
 
-    double w0 = 2 * M_PI * ( filter->freq / filter->sample_rate );
-    double alpha = sinf( w0 ) / ( 2 * filter->q );
+    double w0 = 2 * M_PI * ( filter->params.freq / filter->params.sample_rate );
+    double alpha = sinf( w0 ) / ( 2 * filter->params.q );
     double cosf_w0 = cosf( w0 );
 
     p_coefficients->b0 = (1 + cosf_w0)/2; //b0
@@ -211,8 +210,8 @@ static inline void compute_HPF3_coefficients( Filter* filter, Coefficients* p_co
 static inline void compute_LPF3_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 1;
 
-    double w0 = 2 * M_PI * ( filter->freq / filter->sample_rate );
-    double alpha = sinf( w0 ) / ( 2 * filter->q );
+    double w0 = 2 * M_PI * ( filter->params.freq / filter->params.sample_rate );
+    double alpha = sinf( w0 ) / ( 2 * filter->params.q );
     double cosf_w0 = cosf( w0 );
 
     p_coefficients->b0 = (1 - cosf_w0)/2; //b0
@@ -249,10 +248,10 @@ static inline void compute_LPF4_coefficients( Filter* filter, Coefficients* p_co
 static inline void compute_LSH_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = 2 * M_PI * ( filter->freq / filter->sample_rate );
-    double A = sqrtf( filter->gain );
+    double w0 = 2 * M_PI * ( filter->params.freq / filter->params.sample_rate );
+    double A = sqrtf( filter->params.gain );
     double sqrtf_A = sqrtf( A );
-    double alpha = sinf( w0 ) / ( 2 * filter->q );
+    double alpha = sinf( w0 ) / ( 2 * filter->params.q );
     double sqrtf_A_alpha_2 = 2*sqrtf_A*alpha;
     double cosf_w0 = cosf( w0 );
 
@@ -269,10 +268,10 @@ static inline void compute_LSH_coefficients( Filter* filter, Coefficients* p_coe
 static inline void compute_HSH_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = 2 * M_PI * ( filter->freq / filter->sample_rate );
-    double A = sqrtf( filter->gain );
+    double w0 = 2 * M_PI * ( filter->params.freq / filter->params.sample_rate );
+    double A = sqrtf( filter->params.gain );
     double sqrtf_A = sqrtf( A );
-    double alpha = sinf( w0 ) / ( 2 * filter->q );
+    double alpha = sinf( w0 ) / ( 2 * filter->params.q );
     double sqrtf_A_alpha_2 = 2*sqrtf_A*alpha;
     double cosf_w0 = cosf( w0 );
 
@@ -289,8 +288,8 @@ static inline void compute_HSH_coefficients( Filter* filter, Coefficients* p_coe
 static inline void compute_NOTCH_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = 2 * M_PI * ( filter->freq / filter->sample_rate );
-    double alpha = sinf( w0 ) / ( 2*filter->q );
+    double w0 = 2 * M_PI * ( filter->params.freq / filter->params.sample_rate );
+    double alpha = sinf( w0 ) / ( 2 * filter->params.q );
     double cosf_w0 = cosf( w0 );
 
     p_coefficients->b0 =  1.0; //b0
@@ -319,12 +318,12 @@ static inline void compute_PEAK_NOGAIN_coefficients( Filter* filter, Coefficient
 static inline void compute_PEAK_GAIN_coefficients( Filter* filter, Coefficients* p_coefficients ) {
     filter->filter_order = 0;
 
-    double w0 = 2 * M_PI * ( filter->freq / filter->sample_rate );
+    double w0 = 2 * M_PI * ( filter->params.freq / filter->params.sample_rate );
 
-    double AA = sqrtf( filter->gain );
-    double A2 = filter->gain;
+    double AA = sqrtf( filter->params.gain );
+    double A2 = filter->params.gain;
     double PI2 = M_PI * M_PI;
-    double Q2 = filter->q * filter->q;
+    double Q2 = filter->params.q * filter->params.q;
     double w02 = w0 * w0;
     double w02_PI22 = (w02 - PI2)*(w02 - PI2);
 
@@ -334,9 +333,9 @@ static inline void compute_PEAK_GAIN_coefficients( Filter* filter, Coefficients*
         /
         ( w02_PI22 + ( w02 * PI2 ) / ( Q2*A2 ) )
     );
-    double GB = sqrt(G1*filter->gain);
+    double GB = sqrt( G1 * filter->params.gain );
     double GB2 = GB * GB;
-    double G2 = filter->gain * filter->gain;
+    double G2 = filter->params.gain * filter->params.gain;
     double G12 = G1 * G1;
 
     //Digital filter
@@ -350,8 +349,14 @@ static inline void compute_PEAK_GAIN_coefficients( Filter* filter, Coefficients*
     double W2 = sqrtf(G11 / G00) * tanf(w0/2.0) * tanf(w0/2.0);
 
     //Bandwidth condition
-    double Aw = (w0/(AA*filter->q))*sqrtf((GB2-A2 * A2)/(1.0 - GB2)); //Analog filter bandwidth at GB
-    double DW = (1.0 + sqrtf(F00 / F11) * W2) * tanf(Aw/2.0); //Prewarped digital bandwidth
+    double Aw =
+        ( w0 / ( AA * filter->params.q ) )
+        *
+        sqrtf( (GB2 - A2 * A2) / (1.0 - GB2) ); //Analog filter bandwidth at GB
+    double DW =
+        ( 1.0 + sqrtf(F00 / F11) * W2 )
+        *
+        tanf( Aw / 2.0 ); //Prewarped digital bandwidth
 
 //     printf("G1=%f Aw=%f DW=%f F11=%f GB2=%f G12=%f\r\n",G1,Aw,DW,F11,GB2,G12);
 
@@ -374,7 +379,7 @@ static inline void compute_PEAK_GAIN_coefficients( Filter* filter, Coefficients*
 }
 
 static inline int is_filter_gain_significant( Filter* filter ) {
-    return ( filter->gain > 1.01 || filter->gain < 0.98 );
+    return ( filter->params.gain > 1.01 || filter->params.gain < 0.98 );
 }
 
 static inline void compute_PEAK_coefficients( Filter* filter, Coefficients* p_coefficients ) {
@@ -383,8 +388,8 @@ static inline void compute_PEAK_coefficients( Filter* filter, Coefficients* p_co
 }
 
 static inline void compute_BPF_coefficients( Filter* filter, Coefficients* p_coefficients ) {
-    double w0 = 2 * M_PI * ( filter->freq / filter->sample_rate );
-    double alpha = sinf( w0 ) / ( 2*filter->q );
+    double w0 = 2 * M_PI * ( filter->params.freq / filter->params.sample_rate );
+    double alpha = sinf( w0 ) / ( 2*filter->params.q );
     double cosf_w0 = cosf( w0 );
 
     p_coefficients->b0 = alpha;
@@ -413,8 +418,8 @@ static inline void normalize_coefs( Filter* filter, Coefficients* p_coefficients
 }
 
 static inline void disable_filter( Filter* filter, FilterType filter_type ) {
-    filter->is_enabled = 0;
-    filter->filter_type = filter_type;
+    filter->params.is_enabled = 0;
+    filter->params.filter_type = filter_type;
 
     filter->b0 = filter->b1_0 = 1.0;
     filter->b1 = filter->b2 = filter->a1 = filter->a2
@@ -476,21 +481,21 @@ static inline void compute_coefficients( Filter* filter, Coefficients* p_coeffic
     return;
 }
 
+static inline void set_filter_params(Filter *filter, FilterParams *filter_params) {
+    memcpy(&filter->params, filter_params, sizeof(FilterParams));
+}
+
 //Compute filter coefficients
-static inline void calcCoefs(Filter *filter, float fGain, float fFreq, float fQ, FilterType filter_type, int is_enabled) //p2 = GAIN p3 = Q
+static inline void calcCoefs(Filter *filter, FilterParams *filter_params)
 {
     Coefficients coefficients;
     Coefficients* p_coefficients = &coefficients;
 
     initialize_coefficients( p_coefficients );
 
-    filter->freq = fFreq;
-    filter->gain = fGain;
-    filter->q = fQ;
-    filter->is_enabled = is_enabled;
-    filter->filter_type = filter_type;
+    set_filter_params(filter, filter_params);
 
-    compute_coefficients( filter, p_coefficients, filter_type );
+    compute_coefficients( filter, p_coefficients, filter_params->filter_type );
 
     normalize_coefs( filter, p_coefficients );
 
