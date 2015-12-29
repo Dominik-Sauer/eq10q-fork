@@ -83,6 +83,9 @@ typedef struct {
     //FFT Analysis
     FFT fft1;
     int is_fft_on;
+
+    // HACK:
+    int flux_counter;
 } EQ;
 
 static void cleanupEQ(LV2_Handle instance)
@@ -212,6 +215,8 @@ static LV2_Handle instantiateEQ(const LV2_Descriptor *descriptor, double sample_
     initialize_FFT( &plugin->fft1, FFT_N, 0 );
     plugin->is_fft_on = 0;
 
+    plugin->flux_counter = 0;
+
     return (LV2_Handle)plugin;
 
     fail:
@@ -249,8 +254,8 @@ static inline void _handle_control_event ( EQ *plugin, const LV2_Atom_Event *ato
         lv2_atom_forge_double(&plugin->forge, plugin->sample_rate);
         lv2_atom_forge_pop(&plugin->forge, &frameSR);
 
-        // Close off sequence
-        lv2_atom_forge_pop(&plugin->forge, &plugin->notify_frame);
+//         // Close off sequence
+//         lv2_atom_forge_pop(&plugin->forge, &plugin->notify_frame);
     }
 }
 
@@ -274,7 +279,7 @@ static inline void _handle_control_events ( EQ *plugin ) {
     }
 }
 
-static inline void _init_forge ( EQ *plugin ) {
+static inline void _init_lv2_atom_forge ( EQ *plugin ) {
     lv2_atom_forge_set_buffer(
         &plugin->forge,
         (uint8_t*)plugin->notify_port,
@@ -285,6 +290,10 @@ static inline void _init_forge ( EQ *plugin ) {
         &plugin->notify_frame,
         0
     );
+}
+
+static inline void _finish_lv2_atom_forge( EQ *plugin ) {
+    lv2_atom_forge_pop(&plugin->forge, &plugin->notify_frame);
 }
 
 static inline void _send_fft ( EQ *plugin ) {
@@ -300,13 +309,45 @@ static inline void _send_fft ( EQ *plugin ) {
         plugin->fft1.frequency_samples
     );
     lv2_atom_forge_pop(&plugin->forge, &frameFft);
-
-    // Close off sequence
-    lv2_atom_forge_pop(&plugin->forge, &plugin->notify_frame);
 }
 
-static inline int _did_filter_params_change( Filter *filter, FilterParams *current_params ){
-    return !! memcmp(filter, current_params, sizeof(FilterParams));
+static inline void _send_coefs ( EQ *plugin, int band ) {
+    LV2_Atom_Forge_Frame coefs_changed_frame;
+
+    lv2_atom_forge_frame_time(&plugin->forge, 0);
+    lv2_atom_forge_object(
+        &plugin->forge,
+        &coefs_changed_frame,
+        0,
+        plugin->uris.atom_band_coefs_changed
+    );
+
+    lv2_atom_forge_key(&plugin->forge, plugin->uris.atom_band_coefs_band);
+    lv2_atom_forge_int(&plugin->forge, band);
+
+    lv2_atom_forge_key(&plugin->forge, plugin->uris.atom_band_coefs_gain);
+    lv2_atom_forge_double(&plugin->forge, plugin->current_filter_params[band].gain);
+
+    lv2_atom_forge_key(&plugin->forge, plugin->uris.atom_band_coefs_freq);
+    lv2_atom_forge_double(&plugin->forge, plugin->current_filter_params[band].freq);
+
+    lv2_atom_forge_key(&plugin->forge, plugin->uris.atom_band_coefs_q);
+    lv2_atom_forge_double(&plugin->forge, plugin->current_filter_params[band].q);
+
+    lv2_atom_forge_key(&plugin->forge, plugin->uris.atom_band_coefs_filter_type);
+    lv2_atom_forge_int(&plugin->forge, (int)plugin->current_filter_params[band].filter_type);
+
+    lv2_atom_forge_key(&plugin->forge, plugin->uris.atom_band_coefs_is_enabled);
+    lv2_atom_forge_int(&plugin->forge, (int)plugin->current_filter_params[band].is_enabled);
+
+    lv2_atom_forge_pop(
+        &plugin->forge,
+        &coefs_changed_frame
+    );
+}
+
+static inline int _is_filter_params_equal( const FilterParams const *a, const FilterParams const *b ){
+    return !! memcmp(a, b, sizeof(FilterParams));
 }
 
 static inline void _copy_ports_to_filter_params( EQ *plugin, int band, FilterParams *filter_params ) {
@@ -325,26 +366,26 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
     const float in_gain_linear = dB2Lin(*(plugin->in_gain_port));
     const float out_gain_linear = dB2Lin(*(plugin->out_gain_port));
 
-    _init_forge( plugin );
+    _init_lv2_atom_forge( plugin );
 
-    //Read EQ Ports and recompute if changed
     for(int band = 0; band<NUM_BANDS; band++)
     {
-        //ports to current_filter_params
         _copy_ports_to_filter_params( plugin, band, plugin->current_filter_params + band );
 
-        if( _did_filter_params_change(
-            plugin->filter + band,
+        if( _is_filter_params_equal(
+            &plugin->filter[band].params,
             plugin->current_filter_params + band
-        ) ) {
+        ) )
+        {
             calcCoefs(
                 plugin->filter + band,
                 plugin->current_filter_params + band
             );
+
+            _send_coefs( plugin, band );
         }
     }
 
-    //Read input Atom control port (Data from GUI)
     _handle_control_events( plugin );
 
     int fft_is_ready = 0;
@@ -384,6 +425,8 @@ static void runEQ_v2( LV2_Handle instance, uint32_t sample_count ) {
 
     if (fft_is_ready)
         _send_fft( plugin );
+
+    _finish_lv2_atom_forge( plugin );
 
     //Update VU ports
     *( plugin->in_vu_meter_port ) = ComputeVu(plugin->InputVu, sample_count);

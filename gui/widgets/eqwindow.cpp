@@ -25,6 +25,7 @@
 #include "eqwindow.h"
 #include "guiconstants.h"
 #include "setwidgetcolors.h"
+#include "../../dsp/filter.h"
 
 #define KNOB_ICON_FILE "/knobs/knob2_32px.png"
 #define KNOB_ICON_FILE_MINI "/knobs/knob2_25px.png"
@@ -758,9 +759,9 @@ void EqMainWindow::gui_port_event(
 
             if(obj->body.otype == uris.atom_sample_rate_response) {
                 const LV2_Atom* sample_rate_atom = NULL;
-                const int n_props  = lv2_atom_object_get(obj, uris.atom_sample_rate_key, &sample_rate_atom, NULL);
+                const int properties_count  = lv2_atom_object_get(obj, uris.atom_sample_rate_key, &sample_rate_atom, NULL);
 
-                if (n_props != 1 ||   sample_rate_atom->type != uris.atom_Double) {
+                if (properties_count != 1 ||   sample_rate_atom->type != uris.atom_Double) {
                     std::cout<<"Atom Object does not have the required properties (sample-rate) with correct types"<<std::endl;
                 } else {
                     m_sample_rate = ((const LV2_Atom_Double*)sample_rate_atom)->body;
@@ -768,9 +769,9 @@ void EqMainWindow::gui_port_event(
                 }
             } else if(obj->body.otype == uris.atom_fft_data_event) {
                 const LV2_Atom* fftdata_val = NULL;
-                const int n_props  = lv2_atom_object_get(obj, uris.atom_fft_data_key, &fftdata_val, NULL);
+                const int properties_count  = lv2_atom_object_get(obj, uris.atom_fft_data_key, &fftdata_val, NULL);
 
-                if (n_props != 1 || fftdata_val->type != uris.atom_Vector) {
+                if (properties_count != 1 || fftdata_val->type != uris.atom_Vector) {
                     std::cout<<"Atom Object does not have the required properties (fft-data) with correct types"<<std::endl;
                 } else {
                     const LV2_Atom_Vector* vec = (const LV2_Atom_Vector*)fftdata_val;
@@ -789,6 +790,47 @@ void EqMainWindow::gui_port_event(
                             m_Bode->setFftData((double*)(&vec->body + 1));
                         }
                     }
+                }
+            } else if(obj->body.otype == uris.atom_band_coefs_changed) {
+                const LV2_Atom* band_atom = NULL;
+                const LV2_Atom* gain_atom = NULL;
+                const LV2_Atom* freq_atom = NULL;
+                const LV2_Atom* q_atom = NULL;
+                const LV2_Atom* filter_type_atom = NULL;
+                const LV2_Atom* is_enabled_atom = NULL;
+
+                try {
+                    const int properties_count = lv2_atom_object_get(
+                        obj,
+                        uris.atom_band_coefs_band, &band_atom,
+                        uris.atom_band_coefs_gain, &gain_atom,
+                        uris.atom_band_coefs_freq, &freq_atom,
+                        uris.atom_band_coefs_q, &q_atom,
+                        uris.atom_band_coefs_filter_type, &filter_type_atom,
+                        uris.atom_band_coefs_is_enabled, &is_enabled_atom,
+                        NULL
+                    );
+//                     if( ! band_atom )
+                        throw new std::invalid_argument("band atom is null");
+
+                    FilterParams filter_params;
+                    int band = ((const LV2_Atom_Int*)band_atom)->body;
+                    filter_params.gain = ((const LV2_Atom_Double*)gain_atom)->body;
+                    filter_params.freq = ((const LV2_Atom_Double*)freq_atom)->body;
+                    filter_params.q = ((const LV2_Atom_Double*)q_atom)->body;
+                    filter_params.filter_type = (FilterType)((const LV2_Atom_Int*)filter_type_atom)->body;
+                    filter_params.is_enabled = (int)((const LV2_Atom_Int*)is_enabled_atom)->body;
+                    // TODO: thorough checking
+                    std::cout
+                        <<"*** BAND["<<band<<"]COEFS CHANGED: "
+                        <<"g("<<filter_params.gain<<")"
+                        <<"f("<<filter_params.freq<<")"
+                        <<"q("<<filter_params.q<<")"
+                        <<"t("<<filter_params.filter_type<<")"
+                        <<"0("<<filter_params.is_enabled<<")"
+                        <<"***"<<  std::endl;
+                } catch(const std::invalid_argument& e) {
+                    std::cout << "*!* ERROR: " << e.what() << std::endl;
                 }
             }
         }
